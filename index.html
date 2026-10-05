@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="fr" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cabinet de Fred & SCM Quintozone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} }
+        }
+    </script>
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-28 transition-colors duration-200">
+
+    <!-- En-tête -->
+    <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-sky-800 text-white shadow-lg sticky top-0 z-50">
+        <div class="flex justify-between items-center max-w-2xl mx-auto px-4 py-3.5">
+            <h1 class="text-lg font-bold flex items-center gap-2.5 tracking-tight">
+                <div class="bg-white/15 p-2 rounded-xl backdrop-blur-md shadow-inner">
+                    <i class="fa-solid fa-user-doctor text-sky-200"></i>
+                </div>
+                Cabinet de Fred & SCM
+            </h1>
+            <div class="flex items-center gap-2">
+                <span id="header-date" class="text-xs bg-black/20 px-3 py-1.5 rounded-full font-medium backdrop-blur-md border border-white/10 hidden sm:inline"></span>
+                <button onclick="toggleDarkMode()" class="bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-colors" title="Changer de thème">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-2xl mx-auto p-4 space-y-4 mb-16">
+        
+        <!-- ONGLET 1 : ACCUEIL -->
+        <section id="tab-accueil" class="tab-content active space-y-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm">
+                <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                    Rappel du jour (<span id="today-date-label"></span>)
+                </h2>
+                <div id="today-appointments-list" class="space-y-3"></div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 p-4.5 rounded-2xl shadow-sm space-y-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-comment-sms text-emerald-600 dark:text-emerald-400"></i> Rappels SMS
+                    </h2>
+                    <input type="date" id="sms-target-date" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-800 dark:text-emerald-400" onchange="renderTargetSms()">
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Patients prévus à cette date :</p>
+                <div id="target-sms-list" class="space-y-3"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3.5">
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm text-center">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Patients Actifs</span>
+                    <p id="stat-total-patients" class="text-3xl font-extrabold text-blue-800 dark:text-sky-400 mt-1">0</p>
+                </div>
+                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm text-center">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">CA Mois (Cabinet)</span>
+                    <p id="stat-ca-mois" class="text-3xl font-extrabold text-sky-700 dark:text-emerald-400 mt-1">0,00 €</p>
+                </div>
+            </div>
+            
+            <div class="bg-gradient-to-br from-blue-700 to-sky-700 text-white p-4 rounded-2xl shadow-md flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-sm">Nouveau dossier patient ?</h3>
+                    <p class="text-xs text-blue-100 mt-0.5">Attribuez ou modifiez le numéro de dossier librement.</p>
+                </div>
+                <button onclick="openPatientModal()" class="bg-white text-blue-900 px-4 py-2.5 rounded-xl text-xs font-bold shadow hover:bg-blue-50 transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Créer
+                </button>
+            </div>
+        </section>
+
+        <!-- ONGLET 2 : PATIENTS -->
+        <section id="tab-patients" class="tab-content space-y-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-sm space-y-2">
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                        <input type="text" id="search-patient" placeholder="Rechercher par nom ou n° de dossier..." class="w-full pl-10 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-slate-800 dark:text-slate-100" oninput="renderPatients()">
+                    </div>
+                    <button onclick="openPatientModal()" class="bg-blue-800 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-900 transition-colors flex items-center gap-1.5 whitespace-nowrap">
+                        <i class="fa-solid fa-user-plus"></i> Nouveau
+                    </button>
+                </div>
+                <div class="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Importer votre tableau Google Sheets :</span>
+                    <label class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-file-csv"></i> Importer mon CSV
+                        <input type="file" id="import-csv-file" accept=".csv" onchange="importCsvData(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+            <div id="patients-list" class="space-y-3"></div>
+        </section>
+
+        <!-- ONGLET 3 : AGENDA & CRÉNEAUX -->
+        <section id="tab-agenda" class="tab-content space-y-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-calendar-days text-blue-700 dark:text-sky-400"></i> Créneaux Libres (1h30)
+                    </h2>
+                    <input type="date" id="agenda-date-picker" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderAgendaView()">
+                </div>
+                <div class="bg-blue-50 dark:bg-slate-800 p-3 rounded-xl border border-blue-100 dark:border-slate-700 text-xs text-blue-900 dark:text-slate-200 flex justify-between items-center font-medium">
+                    <span>📅 Sélection du jour</span>
+                    <span id="agenda-selected-date-label" class="font-bold"></span>
+                </div>
+                <div id="agenda-slots-list" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-3">
+                <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
+                    <i class="fa-solid fa-globe text-sky-600"></i> Google Agenda Officiel
+                </h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Visualisez et gérez votre agenda Google complet directement ici :</p>
+                <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white">
+                    <iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border: 0" width="100%" height="450" frameborder="0" scrolling="no"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- ONGLET 4 : SCM QUINTOZONE (CHARGES & QUOTES-PARTS) -->
+        <section id="tab-scm" class="tab-content space-y-4">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-building text-blue-700 dark:text-sky-400"></i> SCM Quintozone
+                    </h2>
+                    <input type="month" id="scm-month-filter" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderScmData()">
+                </div>
+                
+                <div class="bg-gradient-to-br from-blue-50 to-sky-50 dark:from-slate-800 dark:to-slate-800/80 p-5 rounded-2xl border border-blue-100 dark:border-slate-700 text-center shadow-inner">
+                    <span class="text-xs text-blue-900 dark:text-sky-400 font-bold uppercase tracking-wider">Total Charges Communes du Mois</span>
+                    <p id="scm-total-charges" class="text-4xl font-black text-blue-800 dark:text-sky-400 mt-1.5">0,00 €</p>
+                </div>
+
+                <div class="flex justify-between items-center pt-2">
+                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Factures & Justificatifs SCM</h3>
+                    <button onclick="openScmExpenseModal()" class="text-xs bg-blue-800 hover:bg-blue-900 text-white px-3 py-1.5 rounded-xl font-bold transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Ajouter une facture
+                    </button>
+                </div>
+                <div id="scm-expenses-list" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-3">
+                <h3 class="text-xs font-extrabold text-blue-900 dark:text-sky-400 uppercase tracking-wider">Sécurité & Sauvegarde Globale</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Enregistrez une copie de vos patients, rendez-vous et comptabilité SCM sur votre Mac.</p>
+                <div class="flex gap-2 pt-1">
+                    <button onclick="exportData()" class="flex-1 bg-blue-800 hover:bg-blue-900 text-white py-2 px-3 rounded-xl text-xs font-bold shadow transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> Sauvegarder
+                    </button>
+                    <label class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-2 px-3 rounded-xl text-xs font-bold shadow transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-upload"></i> Restaurer
+                        <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- BARRE DE NAVIGATION -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 py-2.5 px-6 shadow-xl z-50">
+        <div class="max-w-2xl mx-auto flex justify-around">
+            <button onclick="switchTab('accueil')" id="nav-accueil" class="flex flex-col items-center text-blue-900 dark:text-sky-400 font-bold text-xs transition-all">
+                <div class="p-1.5 rounded-xl bg-blue-100 dark:bg-slate-800 mb-0.5"><i class="fa-solid fa-house text-base"></i></div>Accueil
+            </button>
+            <button onclick="switchTab('patients')" id="nav-patients" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
+                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-address-book text-base"></i></div>Patients
+            </button>
+            <button onclick="switchTab('agenda')" id="nav-agenda" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
+                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-calendar-days text-base"></i></div>Agenda
+            </button>
+            <button onclick="switchTab('scm')" id="nav-scm" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
+                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-building text-base"></i></div>SCM Quintozone
+            </button>
+        </div>
+    </nav>
+
+    <!-- MODAL PATIENT -->
+    <div id="patient-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto border border-slate-100 dark:border-slate-800">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 id="modal-title" class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-blue-700 dark:text-sky-400"></i> Dossier Patient
+                </h3>
+                <button onclick="closePatientModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <form id="patient-form" onsubmit="savePatient(event)" class="space-y-3.5">
+                <input type="hidden" id="patient-id">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Numéro de Dossier (Modifiable)</label>
+                    <input type="text" id="patient-num" required class="w-full mt-1 p-2.5 bg-blue-50/50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-blue-900 dark:text-sky-400 focus:bg-white focus:ring-2 focus:ring-blue-600">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Nom *</label>
+                        <input type="text" id="patient-nom" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Prénom *</label>
+                        <input type="text" id="patient-prenom" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Téléphone (SMS)</label>
+                        <input type="tel" id="patient-tel" placeholder="0600000000" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">E-mail</label>
+                        <input type="email" id="patient-email" placeholder="patient@mail.fr" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Notes</label>
+                    <textarea id="patient-notes" rows="2" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm"></textarea>
+                </div>
+                
+                <!-- DOCUMENTS SCANNÉS PATIENT -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Documents scannés (Ordonnances, etc.)</label>
+                    <input type="file" id="patient-doc-file" accept="image/*,application/pdf" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <div id="patient-docs-preview" class="mt-2 space-y-1.5"></div>
+                </div>
+
+                <hr class="border-slate-100 dark:border-slate-800 my-4">
+                <div class="flex justify-between items-center">
+                    <h4 class="text-xs font-extrabold text-blue-900 dark:text-sky-400 uppercase tracking-wider">Rendez-vous & Honoraires</h4>
+                    <button type="button" onclick="addAppointmentRow()" class="text-xs bg-blue-100 dark:bg-slate-800 text-blue-900 dark:text-sky-400 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-200">+ Ajouter un RDV</button>
+                </div>
+                <div id="appointments-container" class="space-y-2.5"></div>
+                <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="closePatientModal()" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300">Annuler</button>
+                    <button type="submit" class="px-5 py-2.5 bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-blue-900">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FACTURE SCM -->
+    <div id="scm-expense-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-blue-700 dark:text-sky-400"></i> Facture SCM Quintozone
+                </h3>
+                <button onclick="closeScmExpenseModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <form onsubmit="saveScmExpense(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Date</label>
+                    <input type="date" id="scm-expense-date" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Fournisseur / Libellé</label>
+                    <input type="text" id="scm-expense-libelle" placeholder="Ex: Loyer cabinet, Électricité, Internet..." required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Montant (€)</label>
+                        <input type="number" step="0.01" id="scm-expense-montant" placeholder="0.00" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Catégorie</label>
+                        <select id="scm-expense-cat" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                            <option value="Loyer Local">Loyer Local</option>
+                            <option value="Énergie & Fluides">Énergie & Fluides</option>
+                            <option value="Internet & Télécom">Internet & Télécom</option>
+                            <option value="Entretien & Ménage">Entretien & Ménage</option>
+                            <option value="Assurances Locaux">Assurances Locaux</option>
+                            <option value="Frais divers SCM">Frais divers SCM</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Justificatif scanné (Facture)</label>
+                    <input type="file" id="scm-expense-doc-file" accept="image/*,application/pdf" class="w-full mt-1 text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 cursor-pointer">
+                </div>
+                <div class="flex justify-end space-x-2.5 pt-3 border-t dark:border-slate-800">
+                    <button type="button" onclick="closeScmExpenseModal()" class="px-4 py-2 border dark:border-slate-700 rounded-xl text-xs font-bold">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let db = { patients: [], scmExpenses: [] };
+        try {
+            let saved = localStorage.getItem('cabinet_fred_scm_data');
+            if (saved) {
+                db = JSON.parse(saved);
+            } else {
+                let old = localStorage.getItem('cabinet_fred_data_v2');
+                if(old) { let parsed = JSON.parse(old); db.patients = parsed.patients || parsed; db.scmExpenses = parsed.expenses || []; }
+            }
+        } catch(e) { db = { patients: [], scmExpenses: [] }; }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('cabinet_theme', 'light');
+                icon.className = "fa-solid fa-moon";
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('cabinet_theme', 'dark');
+                icon.className = "fa-solid fa-sun";
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "cabinet_fred_et_scm_" + new Date().toISOString().split('T')[0] + ".json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (Array.isArray(parsed)) {
+                            db.patients = parsed;
+                        } else if (parsed && typeof parsed === 'object') {
+                            db = parsed;
+                        }
+                        saveData();
+                        alert("Sauvegarde restaurée avec succès !");
+                    } catch (error) {
+                        alert("Erreur lors de la lecture du fichier.");
+                    }
+                };
+            }
+        }
+
+        function importCsvData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        let text = e.target.result;
+                        let lines = text.split('\n');
+                        let countAdded = 0;
+                        
+                        lines.forEach((line, index) => {
+                            if(index === 0 || !line.trim()) return;
+                            let cols = line.split(/,|\;/);
+                            if(cols.length >= 2) {
+                                let nom = cols[0] ? cols[0].replace(/['"]+/g, '').trim() : '';
+                                let prenom = cols[1] ? cols[1].replace(/['"]+/g, '').trim() : '';
+                                let tel = cols[2] ? cols[2].replace(/['"]+/g, '').trim() : '';
+                                let numDossier = cols[3] ? cols[3].replace(/['"]+/g, '').trim() : String(200 + db.patients.length + 1);
+                                
+                                if(nom && prenom) {
+                                    db.patients.push({
+                                        id: Date.now().toString() + index,
+                                        numDossier: numDossier,
+                                        nom: nom,
+                                        prénom: prenom,
+                                        prenom: prenom,
+                                        tel: tel,
+                                        email: '',
+                                        notes: 'Importé depuis Google Sheets',
+                                        docs: [],
+                                        rdvs: []
+                                    });
+                                    countAdded++;
+                                }
+                            }
+                        });
+                        saveData();
+                        alert(countAdded + " patients importés avec succès !");
+                    } catch (error) {
+                        alert("Erreur lors de l'importation du fichier CSV.");
+                    }
+                };
+            }
+        }
+
+        function formatDateFr(dateStr) {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            if (!y || !m || !d) return dateStr;
+            const dateObj = new Date(y, m - 1, d);
+            return dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function add1h30(timeStr) {
+            if (!timeStr) return '14:30';
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            let totalMins = hours * 60 + minutes + 90;
+            let newH = Math.floor(totalMins / 60) % 24;
+            let newM = totalMins % 60;
+            return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
+        }
+
+        function getHoursForDate(dateStr) {
+            return ['08:00', '09:30', '11:00', '13:00', '14:30', '16:00', '17:30'];
+        }
+
+        function initApp() {
+            if (localStorage.getItem('cabinet_theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-sun";
+            }
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            let tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            let tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            document.getElementById('header-date').innerText = today.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('today-date-label').innerText = formatDateFr(todayStr);
+            document.getElementById('sms-target-date').value = tomorrowStr;
+            document.getElementById('scm-month-filter').value = today.toISOString().slice(0, 7);
+            document.getElementById('agenda-date-picker').value = todayStr;
+            renderAll();
+        }
+
+        function saveData() { 
+            localStorage.setItem('cabinet_fred_scm_data', JSON.stringify(db)); 
+            renderAll(); 
+        }
+
+        function renderAll() { renderTodayAppointments(); renderTargetSms(); renderPatients(); renderAgendaView(); renderScmData(); updateStats(); }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => { 
+                el.classList.remove('text-blue-900', 'dark:text-sky-400', 'font-bold'); 
+                el.classList.add('text-slate-400', 'font-medium'); 
+                const iconDiv = el.querySelector('div');
+                if(iconDiv) iconDiv.classList.remove('bg-blue-100', 'dark:bg-slate-800');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            let btn = document.getElementById('nav-' + tabId);
+            btn.classList.remove('text-slate-400', 'font-medium');
+            btn.classList.add('text-blue-900', 'dark:text-sky-400', 'font-bold');
+            let iconDiv = btn.querySelector('div');
+            if(iconDiv) iconDiv.classList.add('bg-blue-100', 'dark:bg-slate-800');
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total-patients').innerText = db.patients.length;
+            let m = document.getElementById('scm-month-filter').value;
+            let totalMois = 0;
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date && r.date.startsWith(m)) totalMois += parseFloat(r.prix) || 0; }));
+            document.getElementById('stat-ca-mois').innerText = totalMois.toFixed(2) + ' €';
+        }
+
+        function renderTodayAppointments() {
+            let c = document.getElementById('today-appointments-list'); c.innerHTML = '';
+            let today = new Date().toISOString().split('T')[0], count = 0;
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
+                if(r.date === today) {
+                    count++;
+                    let fin = add1h30(r.heure || '13:00');
+                    let prenom = p.prenom || p.prénom || '';
+                    let dateFrFull = formatDateFr(r.date);
+                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
+                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
+
+                    let div = document.createElement('div');
+                    div.className = "p-3.5 bg-blue-50/80 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
+                    div.innerHTML = `<div><span class="text-xs font-bold bg-blue-800 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'} ➔ ${fin}</span> <b class="text-slate-800 dark:text-slate-100 ml-1.5">${prenom} ${p.nom}</b> (#${p.numDossier})<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${r.motif || 'Soin (1h30)'} — <b>${r.prix || 0} €</b></p></div>
+                    <div class="flex gap-1"><a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors" title="Google Messages"><i class="fa-solid fa-comment-sms"></i> Google Messages</a> <a href="${getGoogleCalendarUrl(p,r)}" target="_blank" class="bg-sky-600 text-white p-2.5 rounded-xl text-xs font-bold" title="Google Agenda"><i class="fa-solid fa-calendar-plus"></i></a></div>`;
+                    c.appendChild(div);
+                }
+            }));
+            if(count === 0) c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucun rendez-vous prévu aujourd'hui.</p>`;
+        }
+
+        function renderTargetSms() {
+            let c = document.getElementById('target-sms-list'); c.innerHTML = '';
+            let targetDateStr = document.getElementById('sms-target-date').value;
+            if(!targetDateStr) return;
+
+            let count = 0;
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
+                if(r.date === targetDateStr) {
+                    count++;
+                    let prenom = p.prenom || p.prénom || '';
+                    let dateFrFull = formatDateFr(r.date);
+                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
+                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
+
+                    let div = document.createElement('div');
+                    div.className = "p-3.5 bg-emerald-50/80 dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
+                    div.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold bg-emerald-700 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span>
+                            <b class="text-slate-800 dark:text-slate-100 text-sm ml-1.5">${prenom} ${p.nom}</b> <span class="text-xs opacity-70">(#${p.numDossier})</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">SMS : <i>"${smsText}"</i></p>
+                        </div>
+                        <div>
+                            <a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-paper-plane"></i> Google Messages</a>
+                        </div>
+                    `;
+                    c.appendChild(div);
+                }
+            }));
+
+            if(count === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun rendez-vous prévu pour cette date.</p>`;
+            }
+        }
+
+        function renderAgendaView() {
+            let selectedDate = document.getElementById('agenda-date-picker').value;
+            document.getElementById('agenda-selected-date-label').innerText = formatDateFr(selectedDate);
+            let container = document.getElementById('agenda-slots-list');
+            container.innerHTML = '';
+            
+            let allHours = getHoursForDate(selectedDate);
+            let dayRdvs = [];
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date === selectedDate) dayRdvs.push({ patient: p, rdv: r }); }));
+
+            allHours.forEach(slotTime => {
+                let slotEnd = add1h30(slotTime);
+                let matched = dayRdvs.find(item => item.rdv.heure === slotTime);
+                
+                let div = document.createElement('div');
+                if(matched) {
+                    let prenom = matched.patient.prenom || matched.patient.prénom || '';
+                    div.className = "p-3.5 bg-blue-900 dark:bg-sky-950 text-white rounded-2xl flex justify-between items-center shadow-sm";
+                    div.innerHTML = `<div><span class="text-xs bg-blue-700 dark:bg-sky-800 px-2.5 py-1 rounded-lg font-bold">${slotTime} ➔ ${slotEnd}</span><p class="font-bold mt-1.5">${prenom} ${matched.patient.nom} <span class="text-xs opacity-80">(#${matched.patient.numDossier})</span></p><p class="text-xs opacity-90">${matched.rdv.motif || 'Soin'} • <b>${matched.rdv.prix || 0} €</b></p></div><a href="${getGoogleCalendarUrl(matched.patient, matched.rdv)}" target="_blank" class="bg-sky-500 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-calendar-plus"></i></a>`;
+                    container.appendChild(div);
+                } else {
+                    div.className = "p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-between items-center text-slate-500 dark:text-slate-400";
+                    div.innerHTML = `<div><span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-semibold">${slotTime} ➔ ${slotEnd}</span><span class="text-xs font-medium ml-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Créneau libre (1h30)</span></div><button onclick="openPatientModalWithTime('${selectedDate}', '${slotTime}')" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-sky-300 hover:bg-blue-100 font-bold px-3.5 py-2 rounded-xl">Réserver</button>`;
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        function openPatientModalWithTime(date, time) {
+            openPatientModal();
+            setTimeout(() => {
+                let rows = document.querySelectorAll('.rdv-row');
+                if(rows.length > 0) {
+                    let lastRow = rows[rows.length - 1];
+                    lastRow.querySelector('.rdv-date').value = date;
+                    lastRow.querySelector('.rdv-heure').value = time;
+                }
+            }, 50);
+        }
+
+        function renderPatients() {
+            let c = document.getElementById('patients-list'); c.innerHTML = '';
+            let q = document.getElementById('search-patient').value.toLowerCase();
+            let filtered = db.patients.filter(p => p.nom.toLowerCase().includes(q) || (p.prenom && p.prenom.toLowerCase().includes(q)) || (p.prénom && p.prénom.toLowerCase().includes(q)) || p.numDossier.includes(q));
+            if(filtered.length === 0) { c.innerHTML = `<div class="bg-white dark:bg-slate-900 border dark:border-slate-800 p-6 rounded-2xl text-center text-slate-400 text-sm">Aucun dossier trouvé.</div>`; return; }
+            filtered.forEach(p => {
+                let prenom = p.prenom || p.prénom || '';
+                let div = document.createElement('div');
+                div.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-2";
+                
+                let rdvsHtml = '';
+                if(p.rdvs && p.rdvs.length > 0) {
+                    rdvsHtml = `<div class="mt-2 text-xs space-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700">`;
+                    p.rdvs.forEach(r => {
+                        let dateFr = formatDateFr(r.date);
+                        let fin = add1h30(r.heure || '13:00');
+                        rdvsHtml += `<div class="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-700 pb-1 last:border-0"><span>📅 ${dateFr} de ${r.heure || '13:00'} à ${fin} — <b>${r.prix || 0} €</b> (${r.paiement || 'Espèces'})</span></div>`;
+                    });
+                    rdvsHtml += `</div>`;
+                }
+
+                let docsHtml = '';
+                if(p.docs && p.docs.length > 0) {
+                    docsHtml = `<div class="flex flex-wrap gap-1.5 mt-2">`;
+                    p.docs.forEach((doc) => {
+                        docsHtml += `<a href="${doc.data}" target="_blank" class="bg-sky-50 dark:bg-slate-800 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i> ${doc.name}</a>`;
+                    });
+                    docsHtml += `</div>`;
+                }
+
+                div.innerHTML = `<div class="flex justify-between items-start"><div><span class="text-xs font-extrabold bg-blue-100 dark:bg-slate-800 text-blue-900 dark:text-sky-400 px-2 py-0.5 rounded">Dossier #${p.numDossier}</span><h3 class="font-bold text-base mt-1">${p.nom} ${prenom}</h3><p class="text-xs text-slate-500 dark:text-slate-400">${p.tel || ''} | ${p.email || ''}</p></div><div class="flex gap-1"><button onclick="openPatientModal('${p.id}')" class="text-blue-700 dark:text-sky-400 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deletePatient('${p.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button></div></div>${p.notes ? `<p class="text-xs italic bg-blue-50/50 dark:bg-slate-800/60 p-1.5 rounded">Note : ${p.notes}</p>`:''}${docsHtml}${rdvsHtml}`;
+                c.appendChild(div);
+            });
+        }
+
+        function renderScmData() {
+            let m = document.getElementById('scm-month-filter').value;
+            let totalCharges = 0;
+            let c = document.getElementById('scm-expenses-list');
+            c.innerHTML = '';
+            let filtered = (db.scmExpenses || []).filter(ex => ex.date && ex.date.startsWith(m));
+
+            filtered.forEach(ex => {
+                totalCharges += parseFloat(ex.montant) || 0;
+                let dateFr = formatDateFr(ex.date);
+                let div = document.createElement('div');
+                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
+                let docBtn = ex.doc ? `<a href="${ex.doc}" target="_blank" class="text-sky-600 dark:text-sky-400 font-bold ml-2">📎 Voir facture</a>` : '';
+                div.innerHTML = `<div><b>${ex.libelle}</b> <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] ml-1">${ex.categorie}</span><p class="text-slate-400 mt-0.5">${dateFr} ${docBtn}</p></div><div class="flex items-center gap-3"><span class="font-black text-rose-600 dark:text-rose-400">-${parseFloat(ex.montant).toFixed(2)} €</span><button onclick="deleteScmExpense('${ex.id}')" class="text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button></div>`;
+                c.appendChild(div);
+            });
+
+            if(filtered.length === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucune facture SCM enregistrée ce mois-ci.</p>`;
+            }
+
+            document.getElementById('scm-total-charges').innerText = totalCharges.toFixed(2) + ' €';
+        }
+
+        function getGoogleCalendarUrl(p, r) {
+            let prenom = p.prenom || p.prénom || '';
+            let title = encodeURIComponent(`Soin Cabinet - ${p.nom} ${prenom}`), details = encodeURIComponent(`Dossier #${p.numDossier}`);
+            let dateClean = r.date.replace(/-/g,'');
+            let startH = (r.heure || '13:00').replace(':','') + '00';
+            let endH = add1h30(r.heure || '13:00').replace(':','') + '00';
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateClean}T${startH}/${dateClean}T${endH}&details=${details}`;
+        }
+
+        let currentPatientDocs = [];
+
+        function openPatientModal(id = null) {
+            document.getElementById('patient-modal').classList.remove('hidden');
+            let container = document.getElementById('appointments-container');
+            container.innerHTML = '';
+            currentPatientDocs = [];
+            document.getElementById('patient-doc-file').value = '';
+            renderPatientDocsPreview();
+
+            if(id) {
+                let p = db.patients.find(x => x.id === id);
+                document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-pen text-blue-700 dark:text-sky-400 mr-2"></i> Modifier le Dossier`;
+                document.getElementById('patient-id').value = p.id;
+                document.getElementById('patient-num').value = p.numDossier;
+                document.getElementById('patient-nom').value = p.nom;
+                document.getElementById('patient-prenom').value = p.prenom || p.prénom || '';
+                document.getElementById('patient-tel').value = p.tel || '';
+                document.getElementById('patient-email').value = p.email || '';
+                document.getElementById('patient-notes').value = p.notes || '';
+                if(p.docs) currentPatientDocs = [...p.docs];
+                renderPatientDocsPreview();
+                if(p.rdvs && p.rdvs.length > 0) p.rdvs.forEach(r => addAppointmentRow(r.date, r.heure, r.motif, r.prix, r.paiement));
+            } else {
+                document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-plus text-blue-700 dark:text-sky-400 mr-2"></i> Nouveau Dossier Patient`;
+                document.getElementById('patient-form').reset();
+                document.getElementById('patient-id').value = '';
+                let maxNum = 206;
+                db.patients.forEach(p => { let n = parseInt(p.numDossier); if(!isNaN(n) && n > maxNum) maxNum = n; });
+                document.getElementById('patient-num').value = String(maxNum + 1);
+            }
+        }
+
+        document.getElementById('patient-doc-file').addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            if(file) {
+                let reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    currentPatientDocs.push({ name: file.name, data: uploadEvent.target.result });
+                    renderPatientDocsPreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function renderPatientDocsPreview() {
+            let container = document.getElementById('patient-docs-preview');
+            container.innerHTML = '';
+            currentPatientDocs.forEach((doc, idx) => {
+                let div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-xs border dark:border-slate-700";
+                div.innerHTML = `<span class="truncate">📎 ${doc.name}</span> <button type="button" onclick="currentPatientDocs.splice(${idx},1); renderPatientDocsPreview();" class="text-rose-500 font-bold ml-2">Supprimer</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function closePatientModal() { document.getElementById('patient-modal').classList.add('hidden'); }
+
+        function openScmExpenseModal() {
+            document.getElementById('scm-expense-modal').classList.remove('hidden');
+            document.getElementById('scm-expense-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('scm-expense-libelle').value = '';
+            document.getElementById('scm-expense-montant').value = '';
+            document.getElementById('scm-expense-doc-file').value = '';
+        }
+
+        function closeScmExpenseModal() { document.getElementById('scm-expense-modal').classList.add('hidden'); }
+
+        function saveScmExpense(e) {
+            e.preventDefault();
+            let date = document.getElementById('scm-expense-date').value;
+            let libelle = document.getElementById('scm-expense-libelle').value;
+            let montant = document.getElementById('scm-expense-montant').value;
+            let categorie = document.getElementById('scm-expense-cat').value;
+            let fileInput = document.getElementById('scm-expense-doc-file');
+
+            let newExpense = { id: Date.now().toString(), date, libelle, montant, categorie, doc: null };
+
+            if(fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    newExpense.doc = evt.target.result;
+                    if(!db.scmExpenses) db.scmExpenses = [];
+                    db.scmExpenses.push(newExpense);
+                    saveData();
+                    closeScmExpenseModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                if(!db.scmExpenses) db.scmExpenses = [];
+                db.scmExpenses.push(newExpense);
+                saveData();
+                closeScmExpenseModal();
+            }
+        }
+
+        function deleteScmExpense(id) {
+            if(confirm("Supprimer cette facture SCM ?")) {
+                db.scmExpenses = db.scmExpenses.filter(x => x.id !== id);
+                saveData();
+            }
+        }
+
+        function addAppointmentRow(date = '', heure = '', motif = '', prix = '', paiement = 'Espèces') {
+            let c = document.getElementById('appointments-container');
+            let row = document.createElement('div');
+            row.className = "flex gap-2 items-center bg-slate-50 dark:bg-slate-800 p-2.5 rounded-2xl border dark:border-slate-700 rdv-row";
+            
+            let targetDate = date || new Date().toISOString().split('T')[0];
+            let rawHours = getHoursForDate(targetDate);
+            let optionsHtml = '';
+            rawHours.forEach(h => {
+                let endH = add1h30(h);
+                optionsHtml += `<option value="${h}" ${heure===h?'selected':''}>${h} ➔ ${endH}</option>`;
+            });
+
+            row.innerHTML = `<div class="flex-1 space-y-2"><div class="flex gap-2"><input type="date" value="${targetDate}" class="rdv-date p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2" onchange="updateRowHours(this)"><select class="rdv-heure p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2 font-bold text-blue-900 dark:text-sky-400">${optionsHtml}</select></div><div class="flex gap-2"><input type="text" placeholder="Motif" value="${motif}" class="rdv-motif p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-2/5"><input type="number" placeholder="Prix €" value="${prix}" class="rdv-prix p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/4"><select class="rdv-paiement p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-7/20"><option value="Espèces" ${paiement==='Espèces'?'selected':''}>Espèces</option><option value="CB" ${paiement==='CB'?'selected':''}>CB</option><option value="Chèque" ${paiement==='Chèque'?'selected':''}>Chèque</option><option value="Virement" ${paiement==='Virement'?'selected':''}>Virement</option></select></div></div><button type="button" onclick="this.parentElement.remove()" class="text-rose-400 p-2.5"><i class="fa-solid fa-trash"></i></button>`;
+            c.appendChild(row);
+        }
+
+        function updateRowHours(dateInput) {
+            let row = dateInput.closest('.rdv-row');
+            let select = row.querySelector('.rdv-heure');
+            let selectedDate = dateInput.value;
+            let currentVal = select.value;
+            let rawHours = getHoursForDate(selectedDate);
+            let optionsHtml = '';
+            rawHours.forEach(h => {
+                let endH = add1h30(h);
+                optionsHtml += `<option value="${h}" ${currentVal===h?'selected':''}>${h} ➔ ${endH}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        function savePatient(e) {
+            e.preventDefault();
+            let id = document.getElementById('patient-id').value;
+            let numDossier = document.getElementById('patient-num').value;
+            let nom = document.getElementById('patient-nom').value;
+            let prenom = document.getElementById('patient-prenom').value;
+            let tel = document.getElementById('patient-tel').value;
+            let email = document.getElementById('patient-email').value;
+            let notes = document.getElementById('patient-notes').value;
+            let docs = [...currentPatientDocs];
+            
+            let rdvs = [];
+            document.querySelectorAll('.rdv-row').forEach(row => {
+                rdvs.push({
+                    date: row.querySelector('.rdv-date').value,
+                    heure: row.querySelector('.rdv-heure').value,
+                    motif: row.querySelector('.rdv-motif').value,
+                    prix: row.querySelector('.rdv-prix').value,
+                    paiement: row.querySelector('.rdv-paiement').value
+                });
+            });
+
+            if(id) {
+                let idx = db.patients.findIndex(x => x.id === id);
+                if(idx !== -1) db.patients[idx] = { id, numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs };
+            } else {
+                db.patients.push({ id: Date.now().toString(), numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs });
+            }
+            saveData();
+            closePatientModal();
+        }
+
+        function deletePatient(id) {
+            if(confirm("Supprimer ce dossier ?")) { 
+                db.patients = db.patients.filter(x => x.id !== id); 
+                saveData(); 
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
