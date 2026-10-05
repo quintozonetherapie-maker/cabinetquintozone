@@ -111,7 +111,7 @@
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-calendar-days text-blue-700 dark:text-sky-400"></i> Créneaux Libres (1h30)
+                        <i class="fa-solid fa-calendar-days text-blue-700 dark:text-sky-400"></i> Créneaux Libres
                     </h2>
                     <input type="date" id="agenda-date-picker" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderAgendaView()">
                 </div>
@@ -133,12 +133,12 @@
             </div>
         </section>
 
-        <!-- ONGLET 4 : SCM QUINTOZONE (CHARGES & QUOTES-PARTS) -->
+        <!-- ONGLET 4 : SCM QUINTOZONE (CHARGES & RELEVÉS BANCAIRES) -->
         <section id="tab-scm" class="tab-content space-y-4">
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-building text-blue-700 dark:text-sky-400"></i> SCM Quintozone
+                        <i class="fa-solid fa-building text-blue-700 dark:text-sky-400"></i> SCM Quintozone - Charges
                     </h2>
                     <input type="month" id="scm-month-filter" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderScmData()">
                 </div>
@@ -149,7 +149,7 @@
                 </div>
 
                 <div class="flex justify-between items-center pt-2">
-                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Factures & Justificatifs SCM</h3>
+                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Factures & Justificatifs</h3>
                     <button onclick="openScmExpenseModal()" class="text-xs bg-blue-800 hover:bg-blue-900 text-white px-3 py-1.5 rounded-xl font-bold transition-colors">
                         <i class="fa-solid fa-plus mr-1"></i> Ajouter une facture
                     </button>
@@ -157,9 +157,23 @@
                 <div id="scm-expenses-list" class="space-y-2"></div>
             </div>
 
+            <!-- ESPACE DÉDIÉ : RELEVÉS BANCAIRES -->
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
+                        <i class="fa-solid fa-landmark text-sky-600"></i> Relevés de Compte Bancaire
+                    </h3>
+                    <button onclick="openBankModal()" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold transition-colors flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> Ajouter un relevé
+                    </button>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Stockez et consultez ici vos relevés de compte mensuels au format PDF ou image :</p>
+                <div id="bank-statements-list" class="space-y-2"></div>
+            </div>
+
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-3">
                 <h3 class="text-xs font-extrabold text-blue-900 dark:text-sky-400 uppercase tracking-wider">Sécurité & Sauvegarde Globale</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Enregistrez une copie de vos patients, rendez-vous et comptabilité SCM sur votre Mac.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Enregistrez une copie de vos patients, rendez-vous, factures SCM et relevés bancaires sur votre Mac.</p>
                 <div class="flex gap-2 pt-1">
                     <button onclick="exportData()" class="flex-1 bg-blue-800 hover:bg-blue-900 text-white py-2 px-3 rounded-xl text-xs font-bold shadow transition-colors flex items-center justify-center gap-2">
                         <i class="fa-solid fa-download"></i> Sauvegarder
@@ -231,7 +245,6 @@
                     <textarea id="patient-notes" rows="2" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm"></textarea>
                 </div>
                 
-                <!-- DOCUMENTS SCANNÉS PATIENT -->
                 <div>
                     <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Documents scannés (Ordonnances, etc.)</label>
                     <input type="file" id="patient-doc-file" accept="image/*,application/pdf" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
@@ -299,17 +312,44 @@
         </div>
     </div>
 
+    <!-- MODAL RELEVÉ BANCAIRE -->
+    <div id="bank-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
+                    <i class="fa-solid fa-landmark text-emerald-600"></i> Ajouter un Relevé Bancaire
+                </h3>
+                <button onclick="closeBankModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            <form onsubmit="saveBankStatement(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Mois / Libellé du relevé</label>
+                    <input type="text" id="bank-libelle" placeholder="Ex: Relevé Octobre 2026 - SCM" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Fichier du relevé (PDF ou Image)</label>
+                    <input type="file" id="bank-doc-file" accept="image/*,application/pdf" required class="w-full mt-1 text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 cursor-pointer">
+                </div>
+                <div class="flex justify-end space-x-2.5 pt-3 border-t dark:border-slate-800">
+                    <button type="button" onclick="closeBankModal()" class="px-4 py-2 border dark:border-slate-700 rounded-xl text-xs font-bold">Annuler</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
-        let db = { patients: [], scmExpenses: [] };
+        let db = { patients: [], scmExpenses: [], bankStatements: [] };
         try {
             let saved = localStorage.getItem('cabinet_fred_scm_data');
             if (saved) {
                 db = JSON.parse(saved);
+                if(!db.bankStatements) db.bankStatements = [];
             } else {
                 let old = localStorage.getItem('cabinet_fred_data_v2');
-                if(old) { let parsed = JSON.parse(old); db.patients = parsed.patients || parsed; db.scmExpenses = parsed.expenses || []; }
+                if(old) { let parsed = JSON.parse(old); db.patients = parsed.patients || parsed; db.scmExpenses = parsed.expenses || []; db.bankStatements = []; }
             }
-        } catch(e) { db = { patients: [], scmExpenses: [] }; }
+        } catch(e) { db = { patients: [], scmExpenses: [], bankStatements: [] }; }
 
         function toggleDarkMode() {
             const html = document.documentElement;
@@ -346,6 +386,7 @@
                             db.patients = parsed;
                         } else if (parsed && typeof parsed === 'object') {
                             db = parsed;
+                            if(!db.bankStatements) db.bankStatements = [];
                         }
                         saveData();
                         alert("Sauvegarde restaurée avec succès !");
@@ -409,19 +450,6 @@
             return dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
         }
 
-        function add1h30(timeStr) {
-            if (!timeStr) return '14:30';
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            let totalMins = hours * 60 + minutes + 90;
-            let newH = Math.floor(totalMins / 60) % 24;
-            let newM = totalMins % 60;
-            return String(newH).padStart(2, '0') + ':' + String(newM).padStart(2, '0');
-        }
-
-        function getHoursForDate(dateStr) {
-            return ['08:00', '09:30', '11:00', '13:00', '14:30', '16:00', '17:30'];
-        }
-
         function initApp() {
             if (localStorage.getItem('cabinet_theme') === 'dark') {
                 document.documentElement.classList.add('dark');
@@ -447,7 +475,7 @@
             renderAll(); 
         }
 
-        function renderAll() { renderTodayAppointments(); renderTargetSms(); renderPatients(); renderAgendaView(); renderScmData(); updateStats(); }
+        function renderAll() { renderTodayAppointments(); renderTargetSms(); renderPatients(); renderAgendaView(); renderScmData(); renderBankStatements(); updateStats(); }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -479,7 +507,6 @@
             db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
                 if(r.date === today) {
                     count++;
-                    let fin = add1h30(r.heure || '13:00');
                     let prenom = p.prenom || p.prénom || '';
                     let dateFrFull = formatDateFr(r.date);
                     let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
@@ -487,7 +514,7 @@
 
                     let div = document.createElement('div');
                     div.className = "p-3.5 bg-blue-50/80 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
-                    div.innerHTML = `<div><span class="text-xs font-bold bg-blue-800 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'} ➔ ${fin}</span> <b class="text-slate-800 dark:text-slate-100 ml-1.5">${prenom} ${p.nom}</b> (#${p.numDossier})<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${r.motif || 'Soin (1h30)'} — <b>${r.prix || 0} €</b></p></div>
+                    div.innerHTML = `<div><span class="text-xs font-bold bg-blue-800 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span> <b class="text-slate-800 dark:text-slate-100 ml-1.5">${prenom} ${p.nom}</b> (#${p.numDossier})<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${r.motif || 'Soin'} — <b>${r.prix || 0} €</b></p></div>
                     <div class="flex gap-1"><a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors" title="Google Messages"><i class="fa-solid fa-comment-sms"></i> Google Messages</a> <a href="${getGoogleCalendarUrl(p,r)}" target="_blank" class="bg-sky-600 text-white p-2.5 rounded-xl text-xs font-bold" title="Google Agenda"><i class="fa-solid fa-calendar-plus"></i></a></div>`;
                     c.appendChild(div);
                 }
@@ -530,6 +557,30 @@
             }
         }
 
+        function getHoursForDate(dateStr) {
+            if (!dateStr) return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+            let [y, m, d] = dateStr.split('-').map(Number);
+            
+            // À partir du 1er novembre 2026
+            if (y > 2026 || (y === 2026 && m >= 11)) {
+                let dateObj = new Date(y, m - 1, d);
+                let dayOfWeek = dateObj.getDay(); // 0 = Dimanche, 1 = Lundi, ..., 5 = Vendredi, 6 = Samedi
+                
+                if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+                    // Lundi à Jeudi : 8h à 18h
+                    return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+                } else if (dayOfWeek === 5) {
+                    // Vendredi : 8h à 12h matin uniquement
+                    return ['08:00', '09:00', '10:00', '11:00', '12:00'];
+                } else {
+                    // Samedi / Dimanche : fermé
+                    return [];
+                }
+            }
+            // Avant novembre 2026 (octobre) : ancienne grille
+            return ['08:00', '09:30', '11:00', '13:00', '14:30', '16:00', '17:30'];
+        }
+
         function renderAgendaView() {
             let selectedDate = document.getElementById('agenda-date-picker').value;
             document.getElementById('agenda-selected-date-label').innerText = formatDateFr(selectedDate);
@@ -537,22 +588,25 @@
             container.innerHTML = '';
             
             let allHours = getHoursForDate(selectedDate);
+            if(allHours.length === 0) {
+                container.innerHTML = `<div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-center text-slate-400 text-xs italic">Cabinet fermé ce jour (Week-end).</div>`;
+                return;
+            }
+
             let dayRdvs = [];
             db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date === selectedDate) dayRdvs.push({ patient: p, rdv: r }); }));
 
             allHours.forEach(slotTime => {
-                let slotEnd = add1h30(slotTime);
                 let matched = dayRdvs.find(item => item.rdv.heure === slotTime);
-                
                 let div = document.createElement('div');
                 if(matched) {
                     let prenom = matched.patient.prenom || matched.patient.prénom || '';
                     div.className = "p-3.5 bg-blue-900 dark:bg-sky-950 text-white rounded-2xl flex justify-between items-center shadow-sm";
-                    div.innerHTML = `<div><span class="text-xs bg-blue-700 dark:bg-sky-800 px-2.5 py-1 rounded-lg font-bold">${slotTime} ➔ ${slotEnd}</span><p class="font-bold mt-1.5">${prenom} ${matched.patient.nom} <span class="text-xs opacity-80">(#${matched.patient.numDossier})</span></p><p class="text-xs opacity-90">${matched.rdv.motif || 'Soin'} • <b>${matched.rdv.prix || 0} €</b></p></div><a href="${getGoogleCalendarUrl(matched.patient, matched.rdv)}" target="_blank" class="bg-sky-500 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-calendar-plus"></i></a>`;
+                    div.innerHTML = `<div><span class="text-xs bg-blue-700 dark:bg-sky-800 px-2.5 py-1 rounded-lg font-bold">${slotTime}</span><p class="font-bold mt-1.5">${prenom} ${matched.patient.nom} <span class="text-xs opacity-80">(#${matched.patient.numDossier})</span></p><p class="text-xs opacity-90">${matched.rdv.motif || 'Soin'} • <b>${matched.rdv.prix || 0} €</b></p></div><a href="${getGoogleCalendarUrl(matched.patient, matched.rdv)}" target="_blank" class="bg-sky-500 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-calendar-plus"></i></a>`;
                     container.appendChild(div);
                 } else {
                     div.className = "p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-between items-center text-slate-500 dark:text-slate-400";
-                    div.innerHTML = `<div><span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-semibold">${slotTime} ➔ ${slotEnd}</span><span class="text-xs font-medium ml-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Créneau libre (1h30)</span></div><button onclick="openPatientModalWithTime('${selectedDate}', '${slotTime}')" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-sky-300 hover:bg-blue-100 font-bold px-3.5 py-2 rounded-xl">Réserver</button>`;
+                    div.innerHTML = `<div><span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-semibold">${slotTime}</span><span class="text-xs font-medium ml-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Créneau libre</span></div><button onclick="openPatientModalWithTime('${selectedDate}', '${slotTime}')" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-sky-300 hover:bg-blue-100 font-bold px-3.5 py-2 rounded-xl">Réserver</button>`;
                     container.appendChild(div);
                 }
             });
@@ -585,8 +639,7 @@
                     rdvsHtml = `<div class="mt-2 text-xs space-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700">`;
                     p.rdvs.forEach(r => {
                         let dateFr = formatDateFr(r.date);
-                        let fin = add1h30(r.heure || '13:00');
-                        rdvsHtml += `<div class="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-700 pb-1 last:border-0"><span>📅 ${dateFr} de ${r.heure || '13:00'} à ${fin} — <b>${r.prix || 0} €</b> (${r.paiement || 'Espèces'})</span></div>`;
+                        rdvsHtml += `<div class="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-700 pb-1 last:border-0"><span>📅 ${dateFr} à ${r.heure || '13:00'} — <b>${r.prix || 0} €</b> (${r.paiement || 'Espèces'})</span></div>`;
                     });
                     rdvsHtml += `</div>`;
                 }
@@ -629,12 +682,31 @@
             document.getElementById('scm-total-charges').innerText = totalCharges.toFixed(2) + ' €';
         }
 
+        function renderBankStatements() {
+            let c = document.getElementById('bank-statements-list');
+            c.innerHTML = '';
+            let list = db.bankStatements || [];
+
+            list.forEach(item => {
+                let div = document.createElement('div');
+                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
+                let docBtn = item.doc ? `<a href="${item.doc}" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold ml-2"><i class="fa-solid fa-file-pdf"></i> Ouvrir le relevé</a>` : '';
+                div.innerHTML = `<div><b class="text-slate-800 dark:text-slate-100 text-sm"><i class="fa-solid fa-landmark text-sky-600 mr-1.5"></i> ${item.libelle}</b><p class="text-slate-400 mt-0.5">Ajouté le ${item.dateAjout} ${docBtn}</p></div><div><button onclick="deleteBankStatement('${item.id}')" class="text-rose-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></div>`;
+                c.appendChild(div);
+            });
+
+            if(list.length === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun relevé bancaire enregistré pour le moment.</p>`;
+            }
+        }
+
         function getGoogleCalendarUrl(p, r) {
             let prenom = p.prenom || p.prénom || '';
             let title = encodeURIComponent(`Soin Cabinet - ${p.nom} ${prenom}`), details = encodeURIComponent(`Dossier #${p.numDossier}`);
             let dateClean = r.date.replace(/-/g,'');
             let startH = (r.heure || '13:00').replace(':','') + '00';
-            let endH = add1h30(r.heure || '13:00').replace(':','') + '00';
+            let [h, m] = (r.heure || '13:00').split(':').map(Number);
+            let endH = String((h + 1) % 24).padStart(2, '0') + String(m).padStart(2, '0') + '00';
             return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateClean}T${startH}/${dateClean}T${endH}&details=${details}`;
         }
 
@@ -741,6 +813,40 @@
             }
         }
 
+        function openBankModal() {
+            document.getElementById('bank-modal').classList.remove('hidden');
+            document.getElementById('bank-libelle').value = "Relevé " + new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            document.getElementById('bank-doc-file').value = '';
+        }
+
+        function closeBankModal() { document.getElementById('bank-modal').classList.add('hidden'); }
+
+        function saveBankStatement(e) {
+            e.preventDefault();
+            let libelle = document.getElementById('bank-libelle').value;
+            let fileInput = document.getElementById('bank-doc-file');
+            let dateAjout = new Date().toLocaleDateString('fr-FR');
+
+            if(fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    let newStmt = { id: Date.now().toString(), libelle, dateAjout, doc: evt.target.result };
+                    if(!db.bankStatements) db.bankStatements = [];
+                    db.bankStatements.push(newStmt);
+                    saveData();
+                    closeBankModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        function deleteBankStatement(id) {
+            if(confirm("Supprimer ce relevé bancaire ?")) {
+                db.bankStatements = db.bankStatements.filter(x => x.id !== id);
+                saveData();
+            }
+        }
+
         function addAppointmentRow(date = '', heure = '', motif = '', prix = '', paiement = 'Espèces') {
             let c = document.getElementById('appointments-container');
             let row = document.createElement('div');
@@ -750,8 +856,7 @@
             let rawHours = getHoursForDate(targetDate);
             let optionsHtml = '';
             rawHours.forEach(h => {
-                let endH = add1h30(h);
-                optionsHtml += `<option value="${h}" ${heure===h?'selected':''}>${h} ➔ ${endH}</option>`;
+                optionsHtml += `<option value="${h}" ${heure===h?'selected':''}>${h}</option>`;
             });
 
             row.innerHTML = `<div class="flex-1 space-y-2"><div class="flex gap-2"><input type="date" value="${targetDate}" class="rdv-date p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2" onchange="updateRowHours(this)"><select class="rdv-heure p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2 font-bold text-blue-900 dark:text-sky-400">${optionsHtml}</select></div><div class="flex gap-2"><input type="text" placeholder="Motif" value="${motif}" class="rdv-motif p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-2/5"><input type="number" placeholder="Prix €" value="${prix}" class="rdv-prix p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/4"><select class="rdv-paiement p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-7/20"><option value="Espèces" ${paiement==='Espèces'?'selected':''}>Espèces</option><option value="CB" ${paiement==='CB'?'selected':''}>CB</option><option value="Chèque" ${paiement==='Chèque'?'selected':''}>Chèque</option><option value="Virement" ${paiement==='Virement'?'selected':''}>Virement</option></select></div></div><button type="button" onclick="this.parentElement.remove()" class="text-rose-400 p-2.5"><i class="fa-solid fa-trash"></i></button>`;
@@ -766,8 +871,7 @@
             let rawHours = getHoursForDate(selectedDate);
             let optionsHtml = '';
             rawHours.forEach(h => {
-                let endH = add1h30(h);
-                optionsHtml += `<option value="${h}" ${currentVal===h?'selected':''}>${h} ➔ ${endH}</option>`;
+                optionsHtml += `<option value="${h}" ${currentVal===h?'selected':''}>${h}</option>`;
             });
             select.innerHTML = optionsHtml;
         }
