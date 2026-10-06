@@ -354,3 +354,638 @@
         function toggleDarkMode() {
             const html = document.documentElement;
             const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('cabinet_theme', 'light');
+                icon.className = "fa-solid fa-moon";
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('cabinet_theme', 'dark');
+                icon.className = "fa-solid fa-sun";
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "cabinet_fred_et_scm_" + new Date().toISOString().split('T')[0] + ".json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (Array.isArray(parsed)) {
+                            db.patients = parsed;
+                        } else if (parsed && typeof parsed === 'object') {
+                            db = parsed;
+                            if(!db.bankStatements) db.bankStatements = [];
+                        }
+                        saveData();
+                        alert("Sauvegarde restaurée avec succès !");
+                    } catch (error) {
+                        alert("Erreur lors de la lecture du fichier.");
+                    }
+                };
+            }
+        }
+
+        function importCsvData(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = (e) => {
+                    try {
+                        let text = e.target.result;
+                        let lines = text.split('\n');
+                        let countAdded = 0;
+                        
+                        lines.forEach((line, index) => {
+                            if(index === 0 || !line.trim()) return;
+                            let cols = line.split(/,|\;/);
+                            if(cols.length >= 2) {
+                                let nom = cols[0] ? cols[0].replace(/['"]+/g, '').trim() : '';
+                                let prenom = cols[1] ? cols[1].replace(/['"]+/g, '').trim() : '';
+                                let tel = cols[2] ? cols[2].replace(/['"]+/g, '').trim() : '';
+                                let numDossier = cols[3] ? cols[3].replace(/['"]+/g, '').trim() : String(200 + db.patients.length + 1);
+                                
+                                if(nom && prenom) {
+                                    db.patients.push({
+                                        id: Date.now().toString() + index,
+                                        numDossier: numDossier,
+                                        nom: nom,
+                                        prénom: prenom,
+                                        prenom: prenom,
+                                        tel: tel,
+                                        email: '',
+                                        notes: 'Importé depuis Google Sheets',
+                                        docs: [],
+                                        rdvs: []
+                                    });
+                                    countAdded++;
+                                }
+                            }
+                        });
+                        saveData();
+                        alert(countAdded + " patients importés avec succès !");
+                    } catch (error) {
+                        alert("Erreur lors de l'importation du fichier CSV.");
+                    }
+                };
+            }
+        }
+
+        function formatDateFr(dateStr) {
+            if (!dateStr) return '';
+            const [y, m, d] = dateStr.split('-');
+            if (!y || !m || !d) return dateStr;
+            const dateObj = new Date(y, m - 1, d);
+            return dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        function initApp() {
+            if (localStorage.getItem('cabinet_theme') === 'dark') {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').className = "fa-solid fa-sun";
+            }
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            let tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            let tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+            let headerDateEl = document.getElementById('header-date');
+            if(headerDateEl) headerDateEl.innerText = today.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            
+            let todayDateLabelEl = document.getElementById('today-date-label');
+            if(todayDateLabelEl) todayDateLabelEl.innerText = formatDateFr(todayStr);
+            
+            let smsTargetDateEl = document.getElementById('sms-target-date');
+            if(smsTargetDateEl) smsTargetDateEl.value = tomorrowStr;
+            
+            let scmMonthFilterEl = document.getElementById('scm-month-filter');
+            if(scmMonthFilterEl) scmMonthFilterEl.value = today.toISOString().slice(0, 7);
+            
+            let agendaDatePickerEl = document.getElementById('agenda-date-picker');
+            if(agendaDatePickerEl) agendaDatePickerEl.value = todayStr;
+
+            renderAll();
+        }
+
+        function saveData() { 
+            localStorage.setItem('cabinet_fred_scm_data', JSON.stringify(db)); 
+            renderAll(); 
+        }
+
+        function renderAll() { renderTodayAppointments(); renderTargetSms(); renderPatients(); renderAgendaView(); renderScmData(); renderBankStatements(); updateStats(); }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => { 
+                el.classList.remove('text-blue-900', 'dark:text-sky-400', 'font-bold'); 
+                el.classList.add('text-slate-400', 'font-medium'); 
+                const iconDiv = el.querySelector('div');
+                if(iconDiv) iconDiv.classList.remove('bg-blue-100', 'dark:bg-slate-800');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+            let btn = document.getElementById('nav-' + tabId);
+            btn.classList.remove('text-slate-400', 'font-medium');
+            btn.classList.add('text-blue-900', 'dark:text-sky-400', 'font-bold');
+            let iconDiv = btn.querySelector('div');
+            if(iconDiv) iconDiv.classList.add('bg-blue-100', 'dark:bg-slate-800');
+        }
+
+        function updateStats() {
+            let totalPatientsEl = document.getElementById('stat-total-patients');
+            if(totalPatientsEl) totalPatientsEl.innerText = db.patients.length;
+            
+            let scmMonthFilterEl = document.getElementById('scm-month-filter');
+            let m = scmMonthFilterEl ? scmMonthFilterEl.value : new Date().toISOString().slice(0, 7);
+            let totalMois = 0;
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date && r.date.startsWith(m)) totalMois += parseFloat(r.prix) || 0; }));
+            
+            let statCaMoisEl = document.getElementById('stat-ca-mois');
+            if(statCaMoisEl) statCaMoisEl.innerText = totalMois.toFixed(2) + ' €';
+        }
+
+        function renderTodayAppointments() {
+            let c = document.getElementById('today-appointments-list'); 
+            if(!c) return;
+            c.innerHTML = '';
+            let today = new Date().toISOString().split('T')[0], count = 0;
+            
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
+                if(r.date === today) {
+                    count++;
+                    let prenom = p.prenom || p.prénom || '';
+                    let dateFrFull = formatDateFr(r.date);
+                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
+                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
+
+                    let div = document.createElement('div');
+                    div.className = "p-3.5 bg-blue-50/80 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
+                    div.innerHTML = `<div>
+                        <span class="text-xs font-bold bg-blue-800 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span> 
+                        <a href="javascript:void(0)" onclick="openPatientModal('${p.id}')" class="font-bold text-blue-900 dark:text-sky-400 hover:underline ml-1.5 cursor-pointer">${prenom} ${p.nom}</a> <span class="text-xs opacity-70">(#${p.numDossier})</span>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${r.motif || 'Soin'} — <b>${r.prix || 0} €</b></p>
+                    </div>
+                    <div class="flex gap-1">
+                        <a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-colors" title="Google Messages"><i class="fa-solid fa-comment-sms"></i></a> 
+                        <a href="${getGoogleCalendarUrl(p,r)}" target="_blank" class="bg-sky-600 text-white p-2.5 rounded-xl text-xs font-bold" title="Google Agenda"><i class="fa-solid fa-calendar-plus"></i></a>
+                    </div>`;
+                    c.appendChild(div);
+                }
+            }));
+            if(count === 0) c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucun rendez-vous prévu aujourd'hui.</p>`;
+        }
+
+        function renderTargetSms() {
+            let c = document.getElementById('target-sms-list'); 
+            if(!c) return;
+            c.innerHTML = '';
+            let targetDateEl = document.getElementById('sms-target-date');
+            let targetDateStr = targetDateEl ? targetDateEl.value : '';
+            if(!targetDateStr) return;
+
+            let count = 0;
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
+                if(r.date === targetDateStr) {
+                    count++;
+                    let prenom = p.prenom || p.prénom || '';
+                    let dateFrFull = formatDateFr(r.date);
+                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
+                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
+
+                    let div = document.createElement('div');
+                    div.className = "p-3.5 bg-emerald-50/80 dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
+                    div.innerHTML = `
+                        <div>
+                            <span class="text-xs font-bold bg-emerald-700 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span>
+                            <a href="javascript:void(0)" onclick="openPatientModal('${p.id}')" class="font-bold text-emerald-900 dark:text-emerald-400 hover:underline text-sm ml-1.5 cursor-pointer">${prenom} ${p.nom}</a> <span class="text-xs opacity-70">(#${p.numDossier})</span>
+                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">SMS : <i>"${smsText}"</i></p>
+                        </div>
+                        <div>
+                            <a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-paper-plane"></i> Envoyer</a>
+                        </div>
+                    `;
+                    c.appendChild(div);
+                }
+            }));
+
+            if(count === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun rendez-vous prévu pour cette date.</p>`;
+            }
+        }
+
+        function getHoursForDate(dateStr) {
+            if (!dateStr) return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+            let [y, m, d] = dateStr.split('-').map(Number);
+            if (y > 2026 || (y === 2026 && m >= 11)) {
+                let dateObj = new Date(y, m - 1, d);
+                let dayOfWeek = dateObj.getDay();
+                if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+                    return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
+                } else if (dayOfWeek === 5) {
+                    return ['08:00', '09:00', '10:00', '11:00', '12:00'];
+                } else {
+                    return [];
+                }
+            }
+            return ['08:00', '09:30', '11:00', '13:00', '14:30', '16:00', '17:30'];
+        }
+
+        function renderAgendaView() {
+            let datePickerEl = document.getElementById('agenda-date-picker');
+            if(!datePickerEl) return;
+            let selectedDate = datePickerEl.value;
+            
+            let selectedDateLabelEl = document.getElementById('agenda-selected-date-label');
+            if(selectedDateLabelEl) selectedDateLabelEl.innerText = formatDateFr(selectedDate);
+            
+            let container = document.getElementById('agenda-slots-list');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            let allHours = getHoursForDate(selectedDate);
+            if(allHours.length === 0) {
+                container.innerHTML = `<div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-center text-slate-400 text-xs italic">Cabinet fermé ce jour (Week-end).</div>`;
+                return;
+            }
+
+            let dayRdvs = [];
+            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date === selectedDate) dayRdvs.push({ patient: p, rdv: r }); }));
+
+            allHours.forEach(slotTime => {
+                let matched = dayRdvs.find(item => item.rdv.heure === slotTime);
+                let div = document.createElement('div');
+                if(matched) {
+                    let prenom = matched.patient.prenom || matched.patient.prénom || '';
+                    div.className = "p-3.5 bg-blue-900 dark:bg-sky-950 text-white rounded-2xl flex justify-between items-center shadow-sm";
+                    div.innerHTML = `<div>
+                        <span class="text-xs bg-blue-700 dark:bg-sky-800 px-2.5 py-1 rounded-lg font-bold">${slotTime}</span>
+                        <p class="font-bold mt-1.5"><a href="javascript:void(0)" onclick="openPatientModal('${matched.patient.id}')" class="hover:underline cursor-pointer">${prenom} ${matched.patient.nom}</a> <span class="text-xs opacity-80">(#${matched.patient.numDossier})</span></p>
+                        <p class="text-xs opacity-90">${matched.rdv.motif || 'Soin'} • <b>${matched.rdv.prix || 0} €</b></p>
+                    </div>
+                    <a href="${getGoogleCalendarUrl(matched.patient, matched.rdv)}" target="_blank" class="bg-sky-500 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-calendar-plus"></i></a>`;
+                    container.appendChild(div);
+                } else {
+                    div.className = "p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-between items-center text-slate-500 dark:text-slate-400";
+                    div.innerHTML = `<div><span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-semibold">${slotTime}</span><span class="text-xs font-medium ml-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Créneau libre</span></div><button onclick="openPatientModalWithTime('${selectedDate}', '${slotTime}')" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-sky-300 hover:bg-blue-100 font-bold px-3.5 py-2 rounded-xl">Réserver</button>`;
+                    container.appendChild(div);
+                }
+            });
+        }
+
+        function openPatientModalWithTime(date, time) {
+            openPatientModal();
+            setTimeout(() => {
+                let rows = document.querySelectorAll('.rdv-row');
+                if(rows.length > 0) {
+                    let lastRow = rows[rows.length - 1];
+                    lastRow.querySelector('.rdv-date').value = date;
+                    lastRow.querySelector('.rdv-heure').value = time;
+                }
+            }, 50);
+        }
+
+        function renderPatients() {
+            let c = document.getElementById('patients-list'); 
+            if(!c) return;
+            c.innerHTML = '';
+            let searchEl = document.getElementById('search-patient');
+            let q = searchEl ? searchEl.value.toLowerCase() : '';
+            
+            let filtered = db.patients.filter(p => p.nom.toLowerCase().includes(q) || (p.prenom && p.prenom.toLowerCase().includes(q)) || (p.prénom && p.prénom.toLowerCase().includes(q)) || p.numDossier.includes(q));
+            if(filtered.length === 0) { c.innerHTML = `<div class="bg-white dark:bg-slate-900 border dark:border-slate-800 p-6 rounded-2xl text-center text-slate-400 text-sm">Aucun dossier trouvé.</div>`; return; }
+            
+            filtered.forEach(p => {
+                let prenom = p.prenom || p.prénom || '';
+                let div = document.createElement('div');
+                div.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-2";
+                
+                let rdvsHtml = '';
+                if(p.rdvs && p.rdvs.length > 0) {
+                    rdvsHtml = `<div class="mt-2 text-xs space-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700">`;
+                    p.rdvs.forEach(r => {
+                        let dateFr = formatDateFr(r.date);
+                        rdvsHtml += `<div class="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-700 pb-1 last:border-0"><span>📅 ${dateFr} à ${r.heure || '13:00'} — <b>${r.prix || 0} €</b> (${r.paiement || 'Espèces'})</span></div>`;
+                    });
+                    rdvsHtml += `</div>`;
+                }
+
+                let docsHtml = '';
+                if(p.docs && p.docs.length > 0) {
+                    docsHtml = `<div class="flex flex-wrap gap-1.5 mt-2">`;
+                    p.docs.forEach((doc) => {
+                        docsHtml += `<a href="${doc.data}" target="_blank" class="bg-sky-50 dark:bg-slate-800 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i> ${doc.name}</a>`;
+                    });
+                    docsHtml += `</div>`;
+                }
+
+                div.innerHTML = `<div class="flex justify-between items-start"><div><span class="text-xs font-extrabold bg-blue-100 dark:bg-slate-800 text-blue-900 dark:text-sky-400 px-2 py-0.5 rounded">Dossier #${p.numDossier}</span><h3 class="font-bold text-base mt-1">${p.nom} ${prenom}</h3><p class="text-xs text-slate-500 dark:text-slate-400">${p.tel || ''} | ${p.email || ''}</p></div><div class="flex gap-1"><button onclick="openPatientModal('${p.id}')" class="text-blue-700 dark:text-sky-400 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deletePatient('${p.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button></div></div>${p.notes ? `<p class="text-xs italic bg-blue-50/50 dark:bg-slate-800/60 p-1.5 rounded">Note : ${p.notes}</p>`:''}${docsHtml}${rdvsHtml}`;
+                c.appendChild(div);
+            });
+        }
+
+        function renderScmData() {
+            let scmMonthFilterEl = document.getElementById('scm-month-filter');
+            let m = scmMonthFilterEl ? scmMonthFilterEl.value : new Date().toISOString().slice(0, 7);
+            let totalCharges = 0;
+            let c = document.getElementById('scm-expenses-list');
+            if(!c) return;
+            c.innerHTML = '';
+            let filtered = (db.scmExpenses || []).filter(ex => ex.date && ex.date.startsWith(m));
+
+            filtered.forEach(ex => {
+                totalCharges += parseFloat(ex.montant) || 0;
+                let dateFr = formatDateFr(ex.date);
+                let div = document.createElement('div');
+                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
+                let docBtn = ex.doc ? `<a href="${ex.doc}" target="_blank" class="text-sky-600 dark:text-sky-400 font-bold ml-2">📎 Voir facture</a>` : '';
+                div.innerHTML = `<div><b>${ex.libelle}</b> <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] ml-1">${ex.categorie}</span><p class="text-slate-400 mt-0.5">${dateFr} ${docBtn}</p></div><div class="flex items-center gap-3"><span class="font-black text-rose-600 dark:text-rose-400">-${parseFloat(ex.montant).toFixed(2)} €</span><button onclick="deleteScmExpense('${ex.id}')" class="text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button></div>`;
+                c.appendChild(div);
+            });
+
+            if(filtered.length === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucune facture SCM enregistrée ce mois-ci.</p>`;
+            }
+
+            let scmTotalChargesEl = document.getElementById('scm-total-charges');
+            if(scmTotalChargesEl) scmTotalChargesEl.innerText = totalCharges.toFixed(2) + ' €';
+        }
+
+        function renderBankStatements() {
+            let c = document.getElementById('bank-statements-list');
+            if(!c) return;
+            c.innerHTML = '';
+            let list = db.bankStatements || [];
+
+            list.forEach(item => {
+                let div = document.createElement('div');
+                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
+                let docBtn = item.doc ? `<a href="${item.doc}" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold ml-2"><i class="fa-solid fa-file-pdf"></i> Ouvrir le relevé</a>` : '';
+                div.innerHTML = `<div><b class="text-slate-800 dark:text-slate-100 text-sm"><i class="fa-solid fa-landmark text-sky-600 mr-1.5"></i> ${item.libelle}</b><p class="text-slate-400 mt-0.5">Ajouté le ${item.dateAjout} ${docBtn}</p></div><div><button onclick="deleteBankStatement('${item.id}')" class="text-rose-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></div>`;
+                c.appendChild(div);
+            });
+
+            if(list.length === 0) {
+                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun relevé bancaire enregistré pour le moment.</p>`;
+            }
+        }
+
+        function getGoogleCalendarUrl(p, r) {
+            let prenom = p.prenom || p.prénom || '';
+            let title = encodeURIComponent(`Soin Cabinet - ${p.nom} ${prenom}`), details = encodeURIComponent(`Dossier #${p.numDossier}`);
+            let dateClean = r.date.replace(/-/g,'');
+            let startH = (r.heure || '13:00').replace(':','') + '00';
+            let [h, m] = (r.heure || '13:00').split(':').map(Number);
+            let endH = String((h + 1) % 24).padStart(2, '0') + String(m).padStart(2, '0') + '00';
+            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateClean}T${startH}/${dateClean}T${endH}&details=${details}`;
+        }
+
+        let currentPatientDocs = [];
+
+        function openPatientModal(id = null) {
+            let modalEl = document.getElementById('patient-modal');
+            if(modalEl) modalEl.classList.remove('hidden');
+            let container = document.getElementById('appointments-container');
+            if(container) container.innerHTML = '';
+            currentPatientDocs = [];
+            let docFileEl = document.getElementById('patient-doc-file');
+            if(docFileEl) docFileEl.value = '';
+            renderPatientDocsPreview();
+
+            if(id) {
+                let p = db.patients.find(x => x.id === id);
+                if(p) {
+                    document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-pen text-blue-700 dark:text-sky-400 mr-2"></i> Modifier le Dossier`;
+                    document.getElementById('patient-id').value = p.id;
+                    document.getElementById('patient-num').value = p.numDossier;
+                    document.getElementById('patient-nom').value = p.nom;
+                    document.getElementById('patient-prenom').value = p.prenom || p.prénom || '';
+                    document.getElementById('patient-tel').value = p.tel || '';
+                    document.getElementById('patient-email').value = p.email || '';
+                    document.getElementById('patient-notes').value = p.notes || '';
+                    if(p.docs) currentPatientDocs = [...p.docs];
+                    renderPatientDocsPreview();
+                    if(p.rdvs && p.rdvs.length > 0) p.rdvs.forEach(r => addAppointmentRow(r.date, r.heure, r.motif, r.prix, r.paiement));
+                }
+            } else {
+                document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-plus text-blue-700 dark:text-sky-400 mr-2"></i> Nouveau Dossier Patient`;
+                let formEl = document.getElementById('patient-form');
+                if(formEl) formEl.reset();
+                document.getElementById('patient-id').value = '';
+                let maxNum = 206;
+                db.patients.forEach(p => { let n = parseInt(p.numDossier); if(!isNaN(n) && n > maxNum) maxNum = n; });
+                document.getElementById('patient-num').value = String(maxNum + 1);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let docInput = document.getElementById('patient-doc-file');
+            if(docInput) {
+                docInput.addEventListener('change', function(e) {
+                    let file = e.target.files[0];
+                    if(file) {
+                        let reader = new FileReader();
+                        reader.onload = function(uploadEvent) {
+                            currentPatientDocs.push({ name: file.name, data: uploadEvent.target.result });
+                            renderPatientDocsPreview();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        });
+
+        function renderPatientDocsPreview() {
+            let container = document.getElementById('patient-docs-preview');
+            if(!container) return;
+            container.innerHTML = '';
+            currentPatientDocs.forEach((doc, idx) => {
+                let div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-xs border dark:border-slate-700";
+                div.innerHTML = `<span class="truncate">📎 ${doc.name}</span> <button type="button" onclick="currentPatientDocs.splice(${idx},1); renderPatientDocsPreview();" class="text-rose-500 font-bold ml-2">Supprimer</button>`;
+                container.appendChild(div);
+            });
+        }
+
+        function closePatientModal() { 
+            let modalEl = document.getElementById('patient-modal');
+            if(modalEl) modalEl.classList.add('hidden'); 
+        }
+
+        function openScmExpenseModal() {
+            let modalEl = document.getElementById('scm-expense-modal');
+            if(modalEl) modalEl.classList.remove('hidden');
+            let dateEl = document.getElementById('scm-expense-date');
+            if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+            let libEl = document.getElementById('scm-expense-libelle');
+            if(libEl) libEl.value = '';
+            let montEl = document.getElementById('scm-expense-montant');
+            if(montEl) montEl.value = '';
+            let fileEl = document.getElementById('scm-expense-doc-file');
+            if(fileEl) fileEl.value = '';
+        }
+
+        function closeScmExpenseModal() { 
+            let modalEl = document.getElementById('scm-expense-modal');
+            if(modalEl) modalEl.classList.add('hidden'); 
+        }
+
+        function saveScmExpense(e) {
+            e.preventDefault();
+            let date = document.getElementById('scm-expense-date').value;
+            let libelle = document.getElementById('scm-expense-libelle').value;
+            let montant = document.getElementById('scm-expense-montant').value;
+            let categorie = document.getElementById('scm-expense-cat').value;
+            let fileInput = document.getElementById('scm-expense-doc-file');
+
+            let newExpense = { id: Date.now().toString(), date, libelle, montant, categorie, doc: null };
+
+            if(fileInput && fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    newExpense.doc = evt.target.result;
+                    if(!db.scmExpenses) db.scmExpenses = [];
+                    db.scmExpenses.push(newExpense);
+                    saveData();
+                    closeScmExpenseModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                if(!db.scmExpenses) db.scmExpenses = [];
+                db.scmExpenses.push(newExpense);
+                saveData();
+                closeScmExpenseModal();
+            }
+        }
+
+        function deleteScmExpense(id) {
+            if(confirm("Supprimer cette facture SCM ?")) {
+                db.scmExpenses = db.scmExpenses.filter(x => x.id !== id);
+                saveData();
+            }
+        }
+
+        function openBankModal() {
+            let modalEl = document.getElementById('bank-modal');
+            if(modalEl) modalEl.classList.remove('hidden');
+            let libEl = document.getElementById('bank-libelle');
+            if(libEl) libEl.value = "Relevé " + new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+            let docEl = document.getElementById('bank-doc-file');
+            if(docEl) docEl.value = '';
+        }
+
+        function closeBankModal() { 
+            let modalEl = document.getElementById('bank-modal');
+            if(modalEl) modalEl.classList.add('hidden'); 
+        }
+
+        function saveBankStatement(e) {
+            e.preventDefault();
+            let libelle = document.getElementById('bank-libelle').value;
+            let fileInput = document.getElementById('bank-doc-file');
+            let dateAjout = new Date().toLocaleDateString('fr-FR');
+
+            if(fileInput && fileInput.files[0]) {
+                let reader = new FileReader();
+                reader.onload = function(evt) {
+                    let newStmt = { id: Date.now().toString(), libelle, dateAjout, doc: evt.target.result };
+                    if(!db.bankStatements) db.bankStatements = [];
+                    db.bankStatements.push(newStmt);
+                    saveData();
+                    closeBankModal();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        function deleteBankStatement(id) {
+            if(confirm("Supprimer ce relevé bancaire ?")) {
+                db.bankStatements = db.bankStatements.filter(x => x.id !== id);
+                saveData();
+            }
+        }
+
+        function addAppointmentRow(date = '', heure = '', motif = '', prix = '', paiement = 'Espèces') {
+            let c = document.getElementById('appointments-container');
+            if(!c) return;
+            let row = document.createElement('div');
+            row.className = "flex gap-2 items-center bg-slate-50 dark:bg-slate-800 p-2.5 rounded-2xl border dark:border-slate-700 rdv-row";
+            
+            let targetDate = date || new Date().toISOString().split('T')[0];
+            let rawHours = getHoursForDate(targetDate);
+            let optionsHtml = '';
+            rawHours.forEach(h => {
+                optionsHtml += `<option value="${h}" ${heure===h?'selected':''}>${h}</option>`;
+            });
+
+            row.innerHTML = `<div class="flex-1 space-y-2"><div class="flex gap-2"><input type="date" value="${targetDate}" class="rdv-date p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2" onchange="updateRowHours(this)"><select class="rdv-heure p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2 font-bold text-blue-900 dark:text-sky-400">${optionsHtml}</select></div><div class="flex gap-2"><input type="text" placeholder="Motif" value="${motif}" class="rdv-motif p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-2/5"><input type="number" placeholder="Prix €" value="${prix}" class="rdv-prix p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/4"><select class="rdv-paiement p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-7/20"><option value="Espèces" ${paiement==='Espèces'?'selected':''}>Espèces</option><option value="CB" ${paiement==='CB'?'selected':''}>CB</option><option value="Chèque" ${paiement==='Chèque'?'selected':''}>Chèque</option><option value="Virement" ${paiement==='Virement'?'selected':''}>Virement</option></select></div></div><button type="button" onclick="this.parentElement.remove()" class="text-rose-400 p-2.5"><i class="fa-solid fa-trash"></i></button>`;
+            c.appendChild(row);
+        }
+
+        function updateRowHours(dateInput) {
+            let row = dateInput.closest('.rdv-row');
+            let select = row.querySelector('.rdv-heure');
+            let selectedDate = dateInput.value;
+            let currentVal = select.value;
+            let rawHours = getHoursForDate(selectedDate);
+            let optionsHtml = '';
+            rawHours.forEach(h => {
+                optionsHtml += `<option value="${h}" ${currentVal===h?'selected':''}>${h}</option>`;
+            });
+            select.innerHTML = optionsHtml;
+        }
+
+        function savePatient(e) {
+            e.preventDefault();
+            let id = document.getElementById('patient-id').value;
+            let numDossier = document.getElementById('patient-num').value;
+            let nom = document.getElementById('patient-nom').value;
+            let prenom = document.getElementById('patient-prenom').value;
+            let tel = document.getElementById('patient-tel').value;
+            let email = document.getElementById('patient-email').value;
+            let notes = document.getElementById('patient-notes').value;
+            let docs = [...currentPatientDocs];
+            
+            let rdvs = [];
+            document.querySelectorAll('.rdv-row').forEach(row => {
+                rdvs.push({
+                    date: row.querySelector('.rdv-date').value,
+                    heure: row.querySelector('.rdv-heure').value,
+                    motif: row.querySelector('.rdv-motif').value,
+                    prix: row.querySelector('.rdv-prix').value,
+                    paiement: row.querySelector('.rdv-paiement').value
+                });
+            });
+
+            if(id) {
+                let idx = db.patients.findIndex(x => x.id === id);
+                if(idx !== -1) db.patients[idx] = { id, numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs };
+            } else {
+                db.patients.push({ id: Date.now().toString(), numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs });
+            }
+            saveData();
+            closePatientModal();
+        }
+
+        function deletePatient(id) {
+            if(confirm("Supprimer ce dossier ?")) { 
+                db.patients = db.patients.filter(x => x.id !== id); 
+                saveData(); 
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
