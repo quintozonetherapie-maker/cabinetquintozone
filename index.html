@@ -164,7 +164,8 @@ const KEY='cabinet_fred_scm_data';
 let db={patients:[],scmExpenses:[],bankStatements:[],lastBackup:null};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)db=Object.assign(db,Array.isArray(s)?{patients:s}:s)}catch(e){}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(r=>({...r,id:r.id||uid()}))});
+const tnorm=t=>{const m=String(t||'').match(/(\d{1,2})\s*[h:]\s*(\d{2})?/i);return m?m[1].padStart(2,'0')+':'+(m[2]||'00'):String(t||'')};
+db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(r=>({...r,id:r.id||uid(),heure:tnorm(r.heure),date:String(r.date||'').slice(0,10)}))});
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -327,6 +328,8 @@ function saveRdv(e){
  if(!heure){toast('Aucun créneau libre ce jour-là.');return}
  const clash=allRdvs().find(x=>x.r.date===date&&x.r.heure===heure&&x.r.id!==rid);
  if(clash){toast('Créneau déjà pris par '+full(clash.p)+'.');fillHours();return}
+ const same=allRdvs().find(x=>x.p.id===pid&&x.r.date===date&&x.r.id!==rid);
+ if(same&&!confirm('Ce patient a déjà un rendez-vous ce jour-là à '+same.r.heure+'. Ajouter un second rendez-vous ?'))return;
  const r={id:rid||uid(),date,heure,motif:$('r-motif').value.trim(),prix:$('r-prix').value,pay:$('r-pay').value};
  db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));
  db.patients.find(p=>p.id===pid).rdvs.push(r);
@@ -360,7 +363,7 @@ function importData(ev){
  const f=ev.target.files[0];if(!f)return;const r=new FileReader();
  r.onload=()=>{try{const s=JSON.parse(r.result);if(!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?'))return;
   db=Object.assign({patients:[],scmExpenses:[],bankStatements:[],lastBackup:null},Array.isArray(s)?{patients:s}:s);
-  db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(x=>({...x,id:x.id||uid()}))});
+  db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(x=>({...x,id:x.id||uid(),heure:tnorm(x.heure),date:String(x.date||'').slice(0,10)}))});
   save();toast('Sauvegarde restaurée')}catch(e){toast('Fichier illisible.')}};
  r.readAsText(f,'UTF-8');ev.target.value='';
 }
