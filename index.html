@@ -125,7 +125,7 @@ nav button.on{color:var(--pri)}
 <label>Notes</label><textarea id="p-notes" rows="2"></textarea>
 <label>Documents (ordonnances, scans)</label><input type="file" id="p-file" accept="image/*,application/pdf" onchange="addPatientDoc(this)">
 <div id="p-docs"></div>
-<div id="p-rdv-box"><div class="row sp"><h3>Rendez-vous</h3><button type="button" class="btn sm" onclick="openRdv(null,curPid())">+ RDV</button></div><div id="p-rdvs"></div></div>
+<div id="p-rdv-box"><div class="row sp"><h3>Rendez-vous</h3><div class="row"><button type="button" class="btn sm" onclick="addGcalNew(curPid())">📅 Google Agenda</button><button type="button" class="btn p sm" onclick="openRdv(null,curPid())">+ RDV</button></div></div><div id="p-rdvs"></div></div>
 <div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn d" id="p-del" onclick="deletePatient()">Supprimer</button><button class="btn p">Enregistrer</button></div>
 </form></div></div>
 
@@ -208,6 +208,7 @@ function gcalUrl(p,r){
  const f=t=>ymd(t).replace(/-/g,'')+'T'+String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+'00';
  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&dates='+f(new Date(y,m-1,d,h,mi))+'/'+f(new Date(y,m-1,d,h+1,mi))+'&ctz=Europe/Paris&details='+encodeURIComponent('Dossier #'+p.numDossier+(r.motif?' - '+r.motif:''));
 }
+function addGcalNew(pid){const p=db.patients.find(x=>x.id===pid);if(p)window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&ctz=Europe/Paris&details='+encodeURIComponent('Dossier #'+p.numDossier),'_blank')}
 function addGcal(rid){const x=allRdvs().find(x=>x.r.id===rid);if(x)window.open(gcalUrl(x.p,x.r),'_blank')}
 function sendSms(rid){
  const x=allRdvs().find(x=>x.r.id===rid);if(!x||!x.p.tel)return;
@@ -252,7 +253,7 @@ function renderPatients(){
   <div class="mut">${p.tel?`<a href="tel:${esc(p.tel)}">${esc(p.tel)}</a>`:'Pas de téléphone'}${p.email?' · '+esc(p.email):''}</div>
   <div class="mut">${next?'Prochain : '+fr(next.date,{weekday:'short',day:'numeric',month:'short'})+' à '+esc(next.heure):'Aucun RDV à venir'} · ${p.rdvs.length} séance(s) · ${eur(tot)}</div>
   ${p.notes?`<div class="mut"><i>${esc(p.notes)}</i></div>`:''}</div>
-  <div class="row" style="flex-direction:column"><button class="btn sm" onclick="openPatient('${p.id}')">Ouvrir</button><button class="btn p sm" onclick="openRdv(null,'${p.id}')">+ RDV</button></div></div></div>`}).join(''):'<div class="card mut">Aucun patient trouvé.</div>';
+  <div class="row" style="flex-direction:column"><button class="btn sm" onclick="openPatient('${p.id}')">Ouvrir</button><button class="btn p sm" onclick="openRdv(null,'${p.id}')">+ RDV</button><button class="btn sm" onclick="addGcalNew('${p.id}')">📅 Agenda</button></div></div></div>`}).join(''):'<div class="card mut">Aucun patient trouvé.</div>';
 }
 function renderAgenda(){
  const ds=$('ag-date').value||today();$('ag-label').textContent=fr(ds);
@@ -311,7 +312,7 @@ function renderPatDocs(){
 function renderPatRdvs(){
  const p=curP();if(!p)return;
  const l=[...p.rdvs].sort((a,b)=>(b.date+b.heure).localeCompare(a.date+a.heure));
- $('p-rdvs').innerHTML=l.length?l.map(r=>`<div class="item"><div><b>${fr(r.date,{day:'numeric',month:'short',year:'numeric'})}</b> à ${esc(r.heure)}<div class="mut">${esc(r.motif||'Soin')}${r.prix?' · '+eur(+r.prix)+' ('+esc(r.pay||r.paiement||'')+')':''}</div></div><button type="button" class="btn sm" onclick="openRdv('${r.id}')">Modifier</button></div>`).join(''):'<p class="mut">Aucun rendez-vous.</p>';
+ $('p-rdvs').innerHTML=l.length?l.map(r=>`<div class="item"><div><b>${fr(r.date,{day:'numeric',month:'short',year:'numeric'})}</b> à ${esc(r.heure)}<div class="mut">${esc(r.motif||'Soin')}${r.prix?' · '+eur(+r.prix)+' ('+esc(r.pay||r.paiement||'')+')':''}</div></div><div class="row"><button type="button" class="btn sm" onclick="addGcal('${r.id}')" aria-label="Ajouter à Google Agenda">📅</button><button type="button" class="btn sm" onclick="openRdv('${r.id}')">Modifier</button></div></div>`).join(''):'<p class="mut">Aucun rendez-vous.</p>';
 }
 async function addPatientDoc(inp){const f=inp.files[0];if(!f)return;tmpDocs.push({name:f.name,data:await fileData(f)});inp.value='';renderPatDocs()}
 function savePatient(e){
