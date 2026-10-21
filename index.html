@@ -1,993 +1,386 @@
 <!DOCTYPE html>
-<html lang="fr" class="light">
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cabinet de Fred & SCM Quintozone</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: {} }
-        }
-    </script>
-    <style>
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.25s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cabinet de Fred & SCM Quintozone</title>
+<style>
+:root{--bg:#f3f6f8;--card:#fff;--ink:#12303a;--mut:#667b85;--line:#dde5ea;--pri:#0f6b7a;--pri2:#0a4f5b;--soft:#e3f1f3;--ok:#1f8a5b;--okS:#e2f4ec;--bad:#c4384b;--badS:#fbe6e9}
+html.dark{--bg:#0d1a20;--card:#15262e;--ink:#e7f0f3;--mut:#93aab4;--line:#264049;--pri:#4fb8c9;--pri2:#7fd0dd;--soft:#173a43;--ok:#4cc790;--okS:#13342a;--bad:#ff7d8e;--badS:#3a1a20}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding-bottom:90px}
+header{position:sticky;top:0;z-index:20;background:var(--pri2);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+html.dark header{background:#0a2b33}
+.wrap{max-width:680px;margin:0 auto}
+header .wrap{display:flex;justify-content:space-between;align-items:center;gap:8px}
+header h1{font-size:17px;margin:0}
+header small{display:block;opacity:.8;font-size:12px;text-transform:capitalize}
+main{max-width:680px;margin:0 auto;padding:14px}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+h2{font-size:16px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h3{font-size:13px;margin:14px 0 6px;color:var(--mut)}
+.row{display:flex;gap:8px;align-items:center}.row>*{min-width:0}.sp{justify-content:space-between}.grow{flex:1}
+.mut{color:var(--mut);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 14px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--pri);outline-offset:1px}
+.p{background:var(--pri);color:#fff;border-color:var(--pri)}html.dark .p{color:#06242b}
+.g{background:var(--ok);color:#fff;border-color:var(--ok)}html.dark .g{color:#06241a}
+.d{color:var(--bad);border-color:transparent;background:var(--badS)}
+.sm{padding:6px 10px;font-size:13px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px;color:var(--mut)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-size:22px;margin-top:2px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.time{background:var(--soft);color:var(--pri2);font-weight:700;border-radius:8px;padding:3px 8px;font-size:13px;margin-right:6px}
+html.dark .time{color:var(--pri)}
+.chip{background:var(--soft);color:var(--pri2);border-radius:8px;padding:2px 8px;font-size:12px;font-weight:700}
+html.dark .chip{color:var(--pri)}
+.free{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;color:var(--mut)}
+.busy{background:var(--soft);border-radius:10px;padding:10px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.neg{color:var(--bad)}.pos{color:var(--ok)}
+.warn{background:var(--badS);color:var(--bad);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+a{color:var(--pri)}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+nav .wrap{display:flex}
+nav button{flex:1;border:0;background:none;color:var(--mut);padding:9px 0 8px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--pri)}
+.modal{position:fixed;inset:0;background:rgba(5,20,25,.6);display:none;align-items:flex-end;justify-content:center;z-index:50}
+.modal.show{display:flex}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+@media(min-width:600px){.modal{align-items:center}.sheet{border-radius:20px}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:60;max-width:90%}
+#toast.show{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
 </head>
-<body class="bg-slate-100 dark:bg-slate-950 text-slate-800 dark:text-slate-100 pb-28 transition-colors duration-200">
-
-    <!-- En-tête -->
-    <header class="bg-gradient-to-r from-blue-900 via-blue-800 to-sky-800 text-white shadow-lg sticky top-0 z-50">
-        <div class="flex justify-between items-center max-w-2xl mx-auto px-4 py-3.5">
-            <h1 class="text-lg font-bold flex items-center gap-2.5 tracking-tight">
-                <div class="bg-white/15 p-2 rounded-xl backdrop-blur-md shadow-inner">
-                    <i class="fa-solid fa-user-doctor text-sky-200"></i>
-                </div>
-                Cabinet de Fred & SCM
-            </h1>
-            <div class="flex items-center gap-2">
-                <span id="header-date" class="text-xs bg-black/20 px-3 py-1.5 rounded-full font-medium backdrop-blur-md border border-white/10 hidden sm:inline"></span>
-                <button onclick="toggleDarkMode()" class="bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-md transition-colors" title="Changer de thème">
-                    <i id="theme-icon" class="fa-solid fa-moon"></i>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-2xl mx-auto p-4 space-y-4 mb-16">
-        
-        <!-- ONGLET 1 : ACCUEIL -->
-        <section id="tab-accueil" class="tab-content active space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm">
-                <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 mb-3 flex items-center gap-2 uppercase tracking-wide">
-                    <span class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
-                    Rappel du jour (<span id="today-date-label"></span>)
-                </h2>
-                <div id="today-appointments-list" class="space-y-3"></div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border-2 border-emerald-500/30 p-4.5 rounded-2xl shadow-sm space-y-3">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-comment-sms text-emerald-600 dark:text-emerald-400"></i> Rappels SMS
-                    </h2>
-                    <input type="date" id="sms-target-date" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-emerald-800 dark:text-emerald-400" onchange="renderTargetSms()">
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Patients prévus à cette date :</p>
-                <div id="target-sms-list" class="space-y-3"></div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3.5">
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm text-center">
-                    <span class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">Patients Actifs</span>
-                    <p id="stat-total-patients" class="text-3xl font-extrabold text-blue-800 dark:text-sky-400 mt-1">0</p>
-                </div>
-                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm text-center">
-                    <span class="text-xs text-slate-500 dark:text-slate-400 uppercase font-bold tracking-wider">CA Mois (Cabinet)</span>
-                    <p id="stat-ca-mois" class="text-3xl font-extrabold text-sky-700 dark:text-emerald-400 mt-1">0,00 €</p>
-                </div>
-            </div>
-            
-            <div class="bg-gradient-to-br from-blue-700 to-sky-700 text-white p-4 rounded-2xl shadow-md flex justify-between items-center">
-                <div>
-                    <h3 class="font-bold text-sm">Nouveau dossier patient ?</h3>
-                    <p class="text-xs text-blue-100 mt-0.5">Attribuez ou modifiez le numéro de dossier librement.</p>
-                </div>
-                <button onclick="openPatientModal()" class="bg-white text-blue-900 px-4 py-2.5 rounded-xl text-xs font-bold shadow hover:bg-blue-50 transition-colors flex items-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Créer
-                </button>
-            </div>
-        </section>
-
-        <!-- ONGLET 2 : PATIENTS -->
-        <section id="tab-patients" class="tab-content space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl shadow-sm space-y-2">
-                <div class="flex gap-2">
-                    <div class="relative flex-1">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
-                        <input type="text" id="search-patient" placeholder="Rechercher par nom ou n° de dossier..." class="w-full pl-10 pr-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all text-slate-800 dark:text-slate-100" oninput="renderPatients()">
-                    </div>
-                    <button onclick="openPatientModal()" class="bg-blue-800 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md hover:bg-blue-900 transition-colors flex items-center gap-1.5 whitespace-nowrap">
-                        <i class="fa-solid fa-user-plus"></i> Nouveau
-                    </button>
-                </div>
-                <div class="flex justify-between items-center pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <span class="text-xs text-slate-500 dark:text-slate-400 font-medium">Importer votre tableau Google Sheets :</span>
-                    <label class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-colors flex items-center gap-1.5 cursor-pointer">
-                        <i class="fa-solid fa-file-csv"></i> Importer mon CSV
-                        <input type="file" id="import-csv-file" accept=".csv" onchange="importCsvData(event)" class="hidden">
-                    </label>
-                </div>
-            </div>
-            <div id="patients-list" class="space-y-3"></div>
-        </section>
-
-        <!-- ONGLET 3 : AGENDA & CRÉNEAUX -->
-        <section id="tab-agenda" class="tab-content space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-calendar-days text-blue-700 dark:text-sky-400"></i> Créneaux Libres
-                    </h2>
-                    <input type="date" id="agenda-date-picker" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderAgendaView()">
-                </div>
-                <div class="bg-blue-50 dark:bg-slate-800 p-3 rounded-xl border border-blue-100 dark:border-slate-700 text-xs text-blue-900 dark:text-slate-200 flex justify-between items-center font-medium">
-                    <span>📅 Sélection du jour</span>
-                    <span id="agenda-selected-date-label" class="font-bold"></span>
-                </div>
-                <div id="agenda-slots-list" class="space-y-2"></div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-3">
-                <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                    <i class="fa-solid fa-globe text-sky-600"></i> Google Agenda Officiel
-                </h2>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Visualisez et gérez votre agenda Google complet directement ici :</p>
-                <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white">
-                    <iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border: 0" width="100%" height="450" frameborder="0" scrolling="no"></iframe>
-                </div>
-            </div>
-        </section>
-
-        <!-- ONGLET 4 : SCM QUINTOZONE -->
-        <section id="tab-scm" class="tab-content space-y-4">
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-building text-blue-700 dark:text-sky-400"></i> SCM Quintozone - Charges
-                    </h2>
-                    <input type="month" id="scm-month-filter" class="p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-blue-900 dark:text-sky-400" onchange="renderScmData()">
-                </div>
-                
-                <div class="bg-gradient-to-br from-blue-50 to-sky-50 dark:from-slate-800 dark:to-slate-800/80 p-5 rounded-2xl border border-blue-100 dark:border-slate-700 text-center shadow-inner">
-                    <span class="text-xs text-blue-900 dark:text-sky-400 font-bold uppercase tracking-wider">Total Charges Communes du Mois</span>
-                    <p id="scm-total-charges" class="text-4xl font-black text-blue-800 dark:text-sky-400 mt-1.5">0,00 €</p>
-                </div>
-
-                <div class="flex justify-between items-center pt-2">
-                    <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">Factures & Justificatifs</h3>
-                    <button onclick="openScmExpenseModal()" class="text-xs bg-blue-800 hover:bg-blue-900 text-white px-3 py-1.5 rounded-xl font-bold transition-colors">
-                        <i class="fa-solid fa-plus mr-1"></i> Ajouter une facture
-                    </button>
-                </div>
-                <div id="scm-expenses-list" class="space-y-2"></div>
-            </div>
-
-            <!-- ESPACE DÉDIÉ : RELEVÉS BANCAIRES -->
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-3">
-                <div class="flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-blue-900 dark:text-sky-400 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fa-solid fa-landmark text-sky-600"></i> Relevés de Compte Bancaire
-                    </h3>
-                    <button onclick="openBankModal()" class="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-1.5 rounded-xl font-bold transition-colors flex items-center gap-1">
-                        <i class="fa-solid fa-plus"></i> Ajouter un relevé
-                    </button>
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Stockez et consultez ici vos relevés de compte mensuels au format PDF ou image :</p>
-                <div id="bank-statements-list" class="space-y-2"></div>
-            </div>
-
-            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4.5 rounded-2xl shadow-sm space-y-3">
-                <h3 class="text-xs font-extrabold text-blue-900 dark:text-sky-400 uppercase tracking-wider">Sécurité & Sauvegarde Globale</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Enregistrez une copie de vos patients, rendez-vous, factures SCM et relevés bancaires sur votre Mac.</p>
-                <div class="flex gap-2 pt-1">
-                    <button onclick="exportData()" class="flex-1 bg-blue-800 hover:bg-blue-900 text-white py-2 px-3 rounded-xl text-xs font-bold shadow transition-colors flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-download"></i> Sauvegarder
-                    </button>
-                    <label class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-2 px-3 rounded-xl text-xs font-bold shadow transition-colors flex items-center justify-center gap-2 cursor-pointer">
-                        <i class="fa-solid fa-upload"></i> Restaurer
-                        <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
-                    </label>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- BARRE DE NAVIGATION -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 py-2.5 px-6 shadow-xl z-50">
-        <div class="max-w-2xl mx-auto flex justify-around">
-            <button onclick="switchTab('accueil')" id="nav-accueil" class="flex flex-col items-center text-blue-900 dark:text-sky-400 font-bold text-xs transition-all">
-                <div class="p-1.5 rounded-xl bg-blue-100 dark:bg-slate-800 mb-0.5"><i class="fa-solid fa-house text-base"></i></div>Accueil
-            </button>
-            <button onclick="switchTab('patients')" id="nav-patients" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
-                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-address-book text-base"></i></div>Patients
-            </button>
-            <button onclick="switchTab('agenda')" id="nav-agenda" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
-                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-calendar-days text-base"></i></div>Agenda
-            </button>
-            <button onclick="switchTab('scm')" id="nav-scm" class="flex flex-col items-center text-slate-400 font-medium text-xs transition-all">
-                <div class="p-1.5 rounded-xl mb-0.5"><i class="fa-solid fa-building text-base"></i></div>SCM Quintozone
-            </button>
-        </div>
-    </nav>
-
-    <!-- MODAL PATIENT -->
-    <div id="patient-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-lg rounded-3xl p-6 shadow-2xl max-h-[92vh] overflow-y-auto border border-slate-100 dark:border-slate-800">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 id="modal-title" class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
-                    <i class="fa-solid fa-user-pen text-blue-700 dark:text-sky-400"></i> Dossier Patient
-                </h3>
-                <button onclick="closePatientModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700"><i class="fa-solid fa-xmark text-sm"></i></button>
-            </div>
-            <form id="patient-form" onsubmit="savePatient(event)" class="space-y-3.5">
-                <input type="hidden" id="patient-id">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Numéro de Dossier (Modifiable)</label>
-                    <input type="text" id="patient-num" required class="w-full mt-1 p-2.5 bg-blue-50/50 dark:bg-slate-800 border border-blue-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-blue-900 dark:text-sky-400 focus:bg-white focus:ring-2 focus:ring-blue-600">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Nom *</label>
-                        <input type="text" id="patient-nom" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Prénom *</label>
-                        <input type="text" id="patient-prenom" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Téléphone (SMS)</label>
-                        <input type="tel" id="patient-tel" placeholder="0600000000" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">E-mail</label>
-                        <input type="email" id="patient-email" placeholder="patient@mail.fr" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Notes</label>
-                    <textarea id="patient-notes" rows="2" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm"></textarea>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Documents scannés (Ordonnances, etc.)</label>
-                    <input type="file" id="patient-doc-file" accept="image/*,application/pdf" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                    <div id="patient-docs-preview" class="mt-2 space-y-1.5"></div>
-                </div>
-
-                <hr class="border-slate-100 dark:border-slate-800 my-4">
-                <div class="flex justify-between items-center">
-                    <h4 class="text-xs font-extrabold text-blue-900 dark:text-sky-400 uppercase tracking-wider">Rendez-vous & Honoraires</h4>
-                    <button type="button" onclick="addAppointmentRow()" class="text-xs bg-blue-100 dark:bg-slate-800 text-blue-900 dark:text-sky-400 px-3 py-1.5 rounded-xl font-bold hover:bg-blue-200">+ Ajouter un RDV</button>
-                </div>
-                <div id="appointments-container" class="space-y-2.5"></div>
-                <div class="flex justify-end space-x-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <button type="button" onclick="closePatientModal()" class="px-4 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300">Annuler</button>
-                    <button type="submit" class="px-5 py-2.5 bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md hover:bg-blue-900">Enregistrer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL FACTURE SCM -->
-    <div id="scm-expense-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
-                    <i class="fa-solid fa-receipt text-blue-700 dark:text-sky-400"></i> Facture SCM Quintozone
-                </h3>
-                <button onclick="closeScmExpenseModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><i class="fa-solid fa-xmark text-sm"></i></button>
-            </div>
-            <form onsubmit="saveScmExpense(event)" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Date</label>
-                    <input type="date" id="scm-expense-date" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Fournisseur / Libellé</label>
-                    <input type="text" id="scm-expense-libelle" placeholder="Ex: Loyer cabinet, Électricité, Internet..." required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Montant (€)</label>
-                        <input type="number" step="0.01" id="scm-expense-montant" placeholder="0.00" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm font-bold">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Catégorie</label>
-                        <select id="scm-expense-cat" class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                            <option value="Loyer Local">Loyer Local</option>
-                            <option value="Énergie & Fluides">Énergie & Fluides</option>
-                            <option value="Internet & Télécom">Internet & Télécom</option>
-                            <option value="Entretien & Ménage">Entretien & Ménage</option>
-                            <option value="Assurances Locaux">Assurances Locaux</option>
-                            <option value="Frais divers SCM">Frais divers SCM</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Justificatif scanné (Facture)</label>
-                    <input type="file" id="scm-expense-doc-file" accept="image/*,application/pdf" class="w-full mt-1 text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 cursor-pointer">
-                </div>
-                <div class="flex justify-end space-x-2.5 pt-3 border-t dark:border-slate-800">
-                    <button type="button" onclick="closeScmExpenseModal()" class="px-4 py-2 border dark:border-slate-700 rounded-xl text-xs font-bold">Annuler</button>
-                    <button type="submit" class="px-5 py-2 bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md">Enregistrer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL RELEVÉ BANCAIRE -->
-    <div id="bank-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-800 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
-                <h3 class="text-base font-extrabold text-blue-900 dark:text-sky-400 flex items-center gap-2">
-                    <i class="fa-solid fa-landmark text-emerald-600"></i> Ajouter un Relevé Bancaire
-                </h3>
-                <button onclick="closeBankModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><i class="fa-solid fa-xmark text-sm"></i></button>
-            </div>
-            <form onsubmit="saveBankStatement(event)" class="space-y-3.5">
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Mois / Libellé du relevé</label>
-                    <input type="text" id="bank-libelle" placeholder="Ex: Relevé Octobre 2026 - SCM" required class="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border dark:border-slate-700 rounded-xl text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Fichier du relevé (PDF ou Image)</label>
-                    <input type="file" id="bank-doc-file" accept="image/*,application/pdf" required class="w-full mt-1 text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 cursor-pointer">
-                </div>
-                <div class="flex justify-end space-x-2.5 pt-3 border-t dark:border-slate-800">
-                    <button type="button" onclick="closeBankModal()" class="px-4 py-2 border dark:border-slate-700 rounded-xl text-xs font-bold">Annuler</button>
-                    <button type="submit" class="px-5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-md">Enregistrer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        let db = { patients: [], scmExpenses: [], bankStatements: [] };
-        try {
-            let saved = localStorage.getItem('cabinet_fred_scm_data');
-            if (saved) {
-                db = JSON.parse(saved);
-                if(!db.bankStatements) db.bankStatements = [];
-            } else {
-                let old = localStorage.getItem('cabinet_fred_data_v2');
-                if(old) { let parsed = JSON.parse(old); db.patients = parsed.patients || parsed; db.scmExpenses = parsed.expenses || []; db.bankStatements = []; }
-            }
-        } catch(e) { db = { patients: [], scmExpenses: [], bankStatements: [] }; }
-
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const icon = document.getElementById('theme-icon');
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('cabinet_theme', 'light');
-                icon.className = "fa-solid fa-moon";
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('cabinet_theme', 'dark');
-                icon.className = "fa-solid fa-sun";
-            }
-        }
-
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", "cabinet_fred_et_scm_" + new Date().toISOString().split('T')[0] + ".json");
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-        }
-
-        function importData(event) {
-            const fileReader = new FileReader();
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0], "UTF-8");
-                fileReader.onload = (e) => {
-                    try {
-                        const parsed = JSON.parse(e.target.result);
-                        if (Array.isArray(parsed)) {
-                            db.patients = parsed;
-                        } else if (parsed && typeof parsed === 'object') {
-                            db = parsed;
-                            if(!db.bankStatements) db.bankStatements = [];
-                        }
-                        saveData();
-                        alert("Sauvegarde restaurée avec succès !");
-                    } catch (error) {
-                        alert("Erreur lors de la lecture du fichier.");
-                    }
-                };
-            }
-        }
-
-        function importCsvData(event) {
-            const fileReader = new FileReader();
-            if (event.target.files[0]) {
-                fileReader.readAsText(event.target.files[0], "UTF-8");
-                fileReader.onload = (e) => {
-                    try {
-                        let text = e.target.result;
-                        let lines = text.split('\n');
-                        let countAdded = 0;
-                        
-                        lines.forEach((line, index) => {
-                            if(index === 0 || !line.trim()) return;
-                            let cols = line.split(/,|\;/);
-                            if(cols.length >= 2) {
-                                let nom = cols[0] ? cols[0].replace(/['"]+/g, '').trim() : '';
-                                let prenom = cols[1] ? cols[1].replace(/['"]+/g, '').trim() : '';
-                                let tel = cols[2] ? cols[2].replace(/['"]+/g, '').trim() : '';
-                                let numDossier = cols[3] ? cols[3].replace(/['"]+/g, '').trim() : String(200 + db.patients.length + 1);
-                                
-                                if(nom && prenom) {
-                                    db.patients.push({
-                                        id: Date.now().toString() + index,
-                                        numDossier: numDossier,
-                                        nom: nom,
-                                        prénom: prenom,
-                                        prenom: prenom,
-                                        tel: tel,
-                                        email: '',
-                                        notes: 'Importé depuis Google Sheets',
-                                        docs: [],
-                                        rdvs: []
-                                    });
-                                    countAdded++;
-                                }
-                            }
-                        });
-                        saveData();
-                        alert(countAdded + " patients importés avec succès !");
-                    } catch (error) {
-                        alert("Erreur lors de l'importation du fichier CSV.");
-                    }
-                };
-            }
-        }
-
-        function formatDateFr(dateStr) {
-            if (!dateStr) return '';
-            const [y, m, d] = dateStr.split('-');
-            if (!y || !m || !d) return dateStr;
-            const dateObj = new Date(y, m - 1, d);
-            return dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        }
-
-        function initApp() {
-            if (localStorage.getItem('cabinet_theme') === 'dark') {
-                document.documentElement.classList.add('dark');
-                document.getElementById('theme-icon').className = "fa-solid fa-sun";
-            }
-            const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
-            
-            let tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            let tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-            let headerDateEl = document.getElementById('header-date');
-            if(headerDateEl) headerDateEl.innerText = today.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
-            let todayDateLabelEl = document.getElementById('today-date-label');
-            if(todayDateLabelEl) todayDateLabelEl.innerText = formatDateFr(todayStr);
-            
-            let smsTargetDateEl = document.getElementById('sms-target-date');
-            if(smsTargetDateEl) smsTargetDateEl.value = tomorrowStr;
-            
-            let scmMonthFilterEl = document.getElementById('scm-month-filter');
-            if(scmMonthFilterEl) scmMonthFilterEl.value = today.toISOString().slice(0, 7);
-            
-            let agendaDatePickerEl = document.getElementById('agenda-date-picker');
-            if(agendaDatePickerEl) agendaDatePickerEl.value = todayStr;
-
-            renderAll();
-        }
-
-        function saveData() { 
-            localStorage.setItem('cabinet_fred_scm_data', JSON.stringify(db)); 
-            renderAll(); 
-        }
-
-        function renderAll() { renderTodayAppointments(); renderTargetSms(); renderPatients(); renderAgendaView(); renderScmData(); renderBankStatements(); updateStats(); }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('nav button').forEach(el => { 
-                el.classList.remove('text-blue-900', 'dark:text-sky-400', 'font-bold'); 
-                el.classList.add('text-slate-400', 'font-medium'); 
-                const iconDiv = el.querySelector('div');
-                if(iconDiv) iconDiv.classList.remove('bg-blue-100', 'dark:bg-slate-800');
-            });
-            document.getElementById('tab-' + tabId).classList.add('active');
-            let btn = document.getElementById('nav-' + tabId);
-            if(btn) {
-                btn.classList.remove('text-slate-400', 'font-medium');
-                btn.classList.add('text-blue-900', 'dark:text-sky-400', 'font-bold');
-                let iconDiv = btn.querySelector('div');
-                if(iconDiv) iconDiv.classList.add('bg-blue-100', 'dark:bg-slate-800');
-            }
-        }
-
-        function updateStats() {
-            let totalPatientsEl = document.getElementById('stat-total-patients');
-            if(totalPatientsEl) totalPatientsEl.innerText = db.patients.length;
-            
-            let scmMonthFilterEl = document.getElementById('scm-month-filter');
-            let m = scmMonthFilterEl ? scmMonthFilterEl.value : new Date().toISOString().slice(0, 7);
-            let totalMois = 0;
-            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date && r.date.startsWith(m)) totalMois += parseFloat(r.prix) || 0; }));
-            
-            let statCaMoisEl = document.getElementById('stat-ca-mois');
-            if(statCaMoisEl) statCaMoisEl.innerText = totalMois.toFixed(2) + ' €';
-        }
-
-        function renderTodayAppointments() {
-            let c = document.getElementById('today-appointments-list'); 
-            if(!c) return;
-            c.innerHTML = '';
-            let today = new Date().toISOString().split('T')[0], count = 0;
-            
-            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
-                if(r.date === today) {
-                    count++;
-                    let prenom = p.prenom || p.prénom || '';
-                    let dateFrFull = formatDateFr(r.date);
-                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
-                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
-
-                    let div = document.createElement('div');
-                    div.className = "p-3.5 bg-blue-50/80 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
-                    div.innerHTML = `<div>
-                        <span class="text-xs font-bold bg-blue-800 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span> 
-                        <a href="javascript:void(0)" onclick="openPatientModal('${p.id}')" class="font-bold text-blue-900 dark:text-sky-400 hover:underline ml-1.5 cursor-pointer">${prenom} ${p.nom}</a> <span class="text-xs opacity-70">(#${p.numDossier})</span>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${r.motif || 'Soin'} — <b>${r.prix || 0} €</b></p>
-                    </div>
-                    <div class="flex gap-1">
-                        <a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow-sm transition-colors" title="Google Messages"><i class="fa-solid fa-comment-sms"></i></a> 
-                        <a href="${getGoogleCalendarUrl(p,r)}" target="_blank" class="bg-sky-600 text-white p-2.5 rounded-xl text-xs font-bold" title="Google Agenda"><i class="fa-solid fa-calendar-plus"></i></a>
-                    </div>`;
-                    c.appendChild(div);
-                }
-            }));
-            if(count === 0) c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucun rendez-vous prévu aujourd'hui.</p>`;
-        }
-
-        function renderTargetSms() {
-            let c = document.getElementById('target-sms-list'); 
-            if(!c) return;
-            c.innerHTML = '';
-            let targetDateEl = document.getElementById('sms-target-date');
-            let targetDateStr = targetDateEl ? targetDateEl.value : '';
-            if(!targetDateStr) return;
-
-            let count = 0;
-            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => {
-                if(r.date === targetDateStr) {
-                    count++;
-                    let prenom = p.prenom || p.prénom || '';
-                    let dateFrFull = formatDateFr(r.date);
-                    let smsText = `Bonjour ${prenom}, je vous rappelle notre rendez-vous du ${dateFrFull} à ${r.heure || '13:00'}. À bientôt. Bonne journée. Frédéric M`;
-                    let webSmsUrl = p.tel ? `https://messages.google.com/web/conversations/new?text=${encodeURIComponent(smsText)}&phone=${encodeURIComponent(p.tel)}` : `https://messages.google.com/web/`;
-
-                    let div = document.createElement('div');
-                    div.className = "p-3.5 bg-emerald-50/80 dark:bg-slate-800 border border-emerald-100 dark:border-slate-700 rounded-2xl flex justify-between items-center gap-3";
-                    div.innerHTML = `
-                        <div>
-                            <span class="text-xs font-bold bg-emerald-700 text-white px-2.5 py-1 rounded-lg">${r.heure || '13:00'}</span>
-                            <a href="javascript:void(0)" onclick="openPatientModal('${p.id}')" class="font-bold text-emerald-900 dark:text-emerald-400 hover:underline text-sm ml-1.5 cursor-pointer">${prenom} ${p.nom}</a> <span class="text-xs opacity-70">(#${p.numDossier})</span>
-                            <p class="text-xs text-slate-600 dark:text-slate-400 mt-1">SMS : <i>"${smsText}"</i></p>
-                        </div>
-                        <div>
-                            <a href="${webSmsUrl}" target="_blank" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors"><i class="fa-solid fa-paper-plane"></i> Envoyer</a>
-                        </div>
-                    `;
-                    c.appendChild(div);
-                }
-            }));
-
-            if(count === 0) {
-                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun rendez-vous prévu pour cette date.</p>`;
-            }
-        }
-
-        function getHoursForDate(dateStr) {
-            if (!dateStr) return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
-            let [y, m, d] = dateStr.split('-').map(Number);
-            if (y > 2026 || (y === 2026 && m >= 11)) {
-                let dateObj = new Date(y, m - 1, d);
-                let dayOfWeek = dateObj.getDay();
-                if (dayOfWeek >= 1 && dayOfWeek <= 4) {
-                    return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
-                } else if (dayOfWeek === 5) {
-                    return ['08:00', '09:00', '10:00', '11:00', '12:00'];
-                } else {
-                    return [];
-                }
-            }
-            return ['08:00', '09:30', '11:00', '13:00', '14:30', '16:00', '17:30'];
-        }
-
-        function renderAgendaView() {
-            let datePickerEl = document.getElementById('agenda-date-picker');
-            if(!datePickerEl) return;
-            let selectedDate = datePickerEl.value;
-            
-            let selectedDateLabelEl = document.getElementById('agenda-selected-date-label');
-            if(selectedDateLabelEl) selectedDateLabelEl.innerText = formatDateFr(selectedDate);
-            
-            let container = document.getElementById('agenda-slots-list');
-            if(!container) return;
-            container.innerHTML = '';
-            
-            let allHours = getHoursForDate(selectedDate);
-            if(allHours.length === 0) {
-                container.innerHTML = `<div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-center text-slate-400 text-xs italic">Cabinet fermé ce jour (Week-end).</div>`;
-                return;
-            }
-
-            let dayRdvs = [];
-            db.patients.forEach(p => p.rdvs && p.rdvs.forEach(r => { if(r.date === selectedDate) dayRdvs.push({ patient: p, rdv: r }); }));
-
-            allHours.forEach(slotTime => {
-                let matched = dayRdvs.find(item => item.rdv.heure === slotTime);
-                let div = document.createElement('div');
-                if(matched) {
-                    let prenom = matched.patient.prenom || matched.patient.prénom || '';
-                    div.className = "p-3.5 bg-blue-900 dark:bg-sky-950 text-white rounded-2xl flex justify-between items-center shadow-sm";
-                    div.innerHTML = `<div>
-                        <span class="text-xs bg-blue-700 dark:bg-sky-800 px-2.5 py-1 rounded-lg font-bold">${slotTime}</span>
-                        <p class="font-bold mt-1.5"><a href="javascript:void(0)" onclick="openPatientModal('${matched.patient.id}')" class="hover:underline cursor-pointer">${prenom} ${matched.patient.nom}</a> <span class="text-xs opacity-80">(#${matched.patient.numDossier})</span></p>
-                        <p class="text-xs opacity-90">${matched.rdv.motif || 'Soin'} • <b>${matched.rdv.prix || 0} €</b></p>
-                    </div>
-                    <a href="${getGoogleCalendarUrl(matched.patient, matched.rdv)}" target="_blank" class="bg-sky-500 text-white p-2.5 rounded-xl text-xs"><i class="fa-solid fa-calendar-plus"></i></a>`;
-                    container.appendChild(div);
-                } else {
-                    div.className = "p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl flex justify-between items-center text-slate-500 dark:text-slate-400";
-                    div.innerHTML = `<div><span class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-lg font-semibold">${slotTime}</span><span class="text-xs font-medium ml-2 text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check mr-1"></i> Créneau libre</span></div><button onclick="openPatientModalWithTime('${selectedDate}', '${slotTime}')" class="text-xs bg-blue-50 dark:bg-slate-700 text-blue-800 dark:text-sky-300 hover:bg-blue-100 font-bold px-3.5 py-2 rounded-xl">Réserver</button>`;
-                    container.appendChild(div);
-                }
-            });
-        }
-
-        function openPatientModalWithTime(date, time) {
-            openPatientModal();
-            setTimeout(() => {
-                let rows = document.querySelectorAll('.rdv-row');
-                if(rows.length > 0) {
-                    let lastRow = rows[rows.length - 1];
-                    lastRow.querySelector('.rdv-date').value = date;
-                    lastRow.querySelector('.rdv-heure').value = time;
-                }
-            }, 50);
-        }
-
-        function renderPatients() {
-            let c = document.getElementById('patients-list'); 
-            if(!c) return;
-            c.innerHTML = '';
-            let searchEl = document.getElementById('search-patient');
-            let q = searchEl ? searchEl.value.toLowerCase() : '';
-            
-            let filtered = db.patients.filter(p => p.nom.toLowerCase().includes(q) || (p.prenom && p.prenom.toLowerCase().includes(q)) || (p.prénom && p.prénom.toLowerCase().includes(q)) || p.numDossier.includes(q));
-            if(filtered.length === 0) { c.innerHTML = `<div class="bg-white dark:bg-slate-900 border dark:border-slate-800 p-6 rounded-2xl text-center text-slate-400 text-sm">Aucun dossier trouvé.</div>`; return; }
-            
-            filtered.forEach(p => {
-                let prenom = p.prenom || p.prénom || '';
-                let div = document.createElement('div');
-                div.className = "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm space-y-2";
-                
-                let rdvsHtml = '';
-                if(p.rdvs && p.rdvs.length > 0) {
-                    rdvsHtml = `<div class="mt-2 text-xs space-y-1 bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl border dark:border-slate-700">`;
-                    p.rdvs.forEach(r => {
-                        let dateFr = formatDateFr(r.date);
-                        rdvsHtml += `<div class="flex justify-between items-center border-b border-slate-200/50 dark:border-slate-700 pb-1 last:border-0"><span>📅 ${dateFr} à ${r.heure || '13:00'} — <b>${r.prix || 0} €</b> (${r.paiement || 'Espèces'})</span></div>`;
-                    });
-                    rdvsHtml += `</div>`;
-                }
-
-                let docsHtml = '';
-                if(p.docs && p.docs.length > 0) {
-                    docsHtml = `<div class="flex flex-wrap gap-1.5 mt-2">`;
-                    p.docs.forEach((doc) => {
-                        docsHtml += `<a href="${doc.data}" target="_blank" class="bg-sky-50 dark:bg-slate-800 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5"><i class="fa-solid fa-file-lines"></i> ${doc.name}</a>`;
-                    });
-                    docsHtml += `</div>`;
-                }
-
-                div.innerHTML = `<div class="flex justify-between items-start"><div><span class="text-xs font-extrabold bg-blue-100 dark:bg-slate-800 text-blue-900 dark:text-sky-400 px-2 py-0.5 rounded">Dossier #${p.numDossier}</span><h3 class="font-bold text-base mt-1">${p.nom} ${prenom}</h3><p class="text-xs text-slate-500 dark:text-slate-400">${p.tel || ''} | ${p.email || ''}</p></div><div class="flex gap-1"><button onclick="openPatientModal('${p.id}')" class="text-blue-700 dark:text-sky-400 p-2"><i class="fa-solid fa-pen-to-square"></i></button><button onclick="deletePatient('${p.id}')" class="text-rose-500 p-2"><i class="fa-solid fa-trash"></i></button></div></div>${p.notes ? `<p class="text-xs italic bg-blue-50/50 dark:bg-slate-800/60 p-1.5 rounded">Note : ${p.notes}</p>`:''}${docsHtml}${rdvsHtml}`;
-                c.appendChild(div);
-            });
-        }
-
-        function renderScmData() {
-            let scmMonthFilterEl = document.getElementById('scm-month-filter');
-            let m = scmMonthFilterEl ? scmMonthFilterEl.value : new Date().toISOString().slice(0, 7);
-            let totalCharges = 0;
-            let c = document.getElementById('scm-expenses-list');
-            if(!c) return;
-            c.innerHTML = '';
-            let filtered = (db.scmExpenses || []).filter(ex => ex.date && ex.date.startsWith(m));
-
-            filtered.forEach(ex => {
-                totalCharges += parseFloat(ex.montant) || 0;
-                let dateFr = formatDateFr(ex.date);
-                let div = document.createElement('div');
-                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
-                let docBtn = ex.doc ? `<a href="${ex.doc}" target="_blank" class="text-sky-600 dark:text-sky-400 font-bold ml-2">📎 Voir facture</a>` : '';
-                div.innerHTML = `<div><b>${ex.libelle}</b> <span class="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-[10px] ml-1">${ex.categorie}</span><p class="text-slate-400 mt-0.5">${dateFr} ${docBtn}</p></div><div class="flex items-center gap-3"><span class="font-black text-rose-600 dark:text-rose-400">-${parseFloat(ex.montant).toFixed(2)} €</span><button onclick="deleteScmExpense('${ex.id}')" class="text-rose-400 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button></div>`;
-                c.appendChild(div);
-            });
-
-            if(filtered.length === 0) {
-                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-3">Aucune facture SCM enregistrée ce mois-ci.</p>`;
-            }
-
-            let scmTotalChargesEl = document.getElementById('scm-total-charges');
-            if(scmTotalChargesEl) scmTotalChargesEl.innerText = totalCharges.toFixed(2) + ' €';
-        }
-
-        function renderBankStatements() {
-            let c = document.getElementById('bank-statements-list');
-            if(!c) return;
-            c.innerHTML = '';
-            let list = db.bankStatements || [];
-
-            list.forEach(item => {
-                let div = document.createElement('div');
-                div.className = "p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-2xl flex justify-between items-center text-xs";
-                let docBtn = item.doc ? `<a href="${item.doc}" target="_blank" class="text-emerald-600 dark:text-emerald-400 font-bold ml-2"><i class="fa-solid fa-file-pdf"></i> Ouvrir le relevé</a>` : '';
-                div.innerHTML = `<div><b class="text-slate-800 dark:text-slate-100 text-sm"><i class="fa-solid fa-landmark text-sky-600 mr-1.5"></i> ${item.libelle}</b><p class="text-slate-400 mt-0.5">Ajouté le ${item.dateAjout} ${docBtn}</p></div><div><button onclick="deleteBankStatement('${item.id}')" class="text-rose-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash"></i></button></div>`;
-                c.appendChild(div);
-            });
-
-            if(list.length === 0) {
-                c.innerHTML = `<p class="text-xs text-slate-400 italic text-center py-2">Aucun relevé bancaire enregistré pour le moment.</p>`;
-            }
-        }
-
-        function getGoogleCalendarUrl(p, r) {
-            let prenom = p.prenom || p.prénom || '';
-            let title = encodeURIComponent(`Soin Cabinet - ${p.nom} ${prenom}`), details = encodeURIComponent(`Dossier #${p.numDossier}`);
-            let dateClean = r.date.replace(/-/g,'');
-            let startH = (r.heure || '13:00').replace(':','') + '00';
-            let [h, m] = (r.heure || '13:00').split(':').map(Number);
-            let endH = String((h + 1) % 24).padStart(2, '0') + String(m).padStart(2, '0') + '00';
-            return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateClean}T${startH}/${dateClean}T${endH}&details=${details}`;
-        }
-
-        let currentPatientDocs = [];
-
-        function openPatientModal(id = null) {
-            let modalEl = document.getElementById('patient-modal');
-            if(modalEl) modalEl.classList.remove('hidden');
-            let container = document.getElementById('appointments-container');
-            if(container) container.innerHTML = '';
-            currentPatientDocs = [];
-            let docFileEl = document.getElementById('patient-doc-file');
-            if(docFileEl) docFileEl.value = '';
-            renderPatientDocsPreview();
-
-            if(id) {
-                let p = db.patients.find(x => x.id === id);
-                if(p) {
-                    document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-pen text-blue-700 dark:text-sky-400 mr-2"></i> Modifier le Dossier`;
-                    document.getElementById('patient-id').value = p.id;
-                    document.getElementById('patient-num').value = p.numDossier;
-                    document.getElementById('patient-nom').value = p.nom;
-                    document.getElementById('patient-prenom').value = p.prenom || p.prénom || '';
-                    document.getElementById('patient-tel').value = p.tel || '';
-                    document.getElementById('patient-email').value = p.email || '';
-                    document.getElementById('patient-notes').value = p.notes || '';
-                    if(p.docs) currentPatientDocs = [...p.docs];
-                    renderPatientDocsPreview();
-                    if(p.rdvs && p.rdvs.length > 0) p.rdvs.forEach(r => addAppointmentRow(r.date, r.heure, r.motif, r.prix, r.paiement));
-                }
-            } else {
-                document.getElementById('modal-title').innerHTML = `<i class="fa-solid fa-user-plus text-blue-700 dark:text-sky-400 mr-2"></i> Nouveau Dossier Patient`;
-                let formEl = document.getElementById('patient-form');
-                if(formEl) formEl.reset();
-                document.getElementById('patient-id').value = '';
-                let maxNum = 206;
-                db.patients.forEach(p => { let n = parseInt(p.numDossier); if(!isNaN(n) && n > maxNum) maxNum = n; });
-                document.getElementById('patient-num').value = String(maxNum + 1);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            let docInput = document.getElementById('patient-doc-file');
-            if(docInput) {
-                docInput.addEventListener('change', function(e) {
-                    let file = e.target.files[0];
-                    if(file) {
-                        let reader = new FileReader();
-                        reader.onload = function(uploadEvent) {
-                            currentPatientDocs.push({ name: file.name, data: uploadEvent.target.result });
-                            renderPatientDocsPreview();
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-        });
-
-        function renderPatientDocsPreview() {
-            let container = document.getElementById('patient-docs-preview');
-            if(!container) return;
-            container.innerHTML = '';
-            currentPatientDocs.forEach((doc, idx) => {
-                let div = document.createElement('div');
-                div.className = "flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-xs border dark:border-slate-700";
-                div.innerHTML = `<span class="truncate">📎 ${doc.name}</span> <button type="button" onclick="currentPatientDocs.splice(${idx},1); renderPatientDocsPreview();" class="text-rose-500 font-bold ml-2">Supprimer</button>`;
-                container.appendChild(div);
-            });
-        }
-
-        function closePatientModal() { 
-            let modalEl = document.getElementById('patient-modal');
-            if(modalEl) modalEl.classList.add('hidden'); 
-        }
-
-        function openScmExpenseModal() {
-            let modalEl = document.getElementById('scm-expense-modal');
-            if(modalEl) modalEl.classList.remove('hidden');
-            let dateEl = document.getElementById('scm-expense-date');
-            if(dateEl) dateEl.value = new Date().toISOString().split('T')[0];
-            let libEl = document.getElementById('scm-expense-libelle');
-            if(libEl) libEl.value = '';
-            let montEl = document.getElementById('scm-expense-montant');
-            if(montEl) montEl.value = '';
-            let fileEl = document.getElementById('scm-expense-doc-file');
-            if(fileEl) fileEl.value = '';
-        }
-
-        function closeScmExpenseModal() { 
-            let modalEl = document.getElementById('scm-expense-modal');
-            if(modalEl) modalEl.classList.add('hidden'); 
-        }
-
-        function saveScmExpense(e) {
-            e.preventDefault();
-            let date = document.getElementById('scm-expense-date').value;
-            let libelle = document.getElementById('scm-expense-libelle').value;
-            let montant = document.getElementById('scm-expense-montant').value;
-            let categorie = document.getElementById('scm-expense-cat').value;
-            let fileInput = document.getElementById('scm-expense-doc-file');
-
-            let newExpense = { id: Date.now().toString(), date, libelle, montant, categorie, doc: null };
-
-            if(fileInput && fileInput.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(evt) {
-                    newExpense.doc = evt.target.result;
-                    if(!db.scmExpenses) db.scmExpenses = [];
-                    db.scmExpenses.push(newExpense);
-                    saveData();
-                    closeScmExpenseModal();
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
-                if(!db.scmExpenses) db.scmExpenses = [];
-                db.scmExpenses.push(newExpense);
-                saveData();
-                closeScmExpenseModal();
-            }
-        }
-
-        function deleteScmExpense(id) {
-            if(confirm("Supprimer cette facture SCM ?")) {
-                db.scmExpenses = db.scmExpenses.filter(x => x.id !== id);
-                saveData();
-            }
-        }
-
-        function openBankModal() {
-            let modalEl = document.getElementById('bank-modal');
-            if(modalEl) modalEl.classList.remove('hidden');
-            let libEl = document.getElementById('bank-libelle');
-            if(libEl) libEl.value = "Relevé " + new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-            let docEl = document.getElementById('bank-doc-file');
-            if(docEl) docEl.value = '';
-        }
-
-        function closeBankModal() { 
-            let modalEl = document.getElementById('bank-modal');
-            if(modalEl) modalEl.classList.add('hidden'); 
-        }
-
-        function saveBankStatement(e) {
-            e.preventDefault();
-            let libelle = document.getElementById('bank-libelle').value;
-            let fileInput = document.getElementById('bank-doc-file');
-            let dateAjout = new Date().toLocaleDateString('fr-FR');
-
-            if(fileInput && fileInput.files[0]) {
-                let reader = new FileReader();
-                reader.onload = function(evt) {
-                    let newStmt = { id: Date.now().toString(), libelle, dateAjout, doc: evt.target.result };
-                    if(!db.bankStatements) db.bankStatements = [];
-                    db.bankStatements.push(newStmt);
-                    saveData();
-                    closeBankModal();
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            }
-        }
-
-        function deleteBankStatement(id) {
-            if(confirm("Supprimer ce relevé bancaire ?")) {
-                db.bankStatements = db.bankStatements.filter(x => x.id !== id);
-                saveData();
-            }
-        }
-
-        function addAppointmentRow(date = '', heure = '', motif = '', prix = '', paiement = 'Espèces') {
-            let c = document.getElementById('appointments-container');
-            if(!c) return;
-            let row = document.createElement('div');
-            row.className = "flex gap-2 items-center bg-slate-50 dark:bg-slate-800 p-2.5 rounded-2xl border dark:border-slate-700 rdv-row";
-            
-            let targetDate = date || new Date().toISOString().split('T')[0];
-            let rawHours = getHoursForDate(targetDate);
-            let optionsHtml = '';
-            rawHours.forEach(h => {
-                optionsHtml += `<option value="${h}" ${heure===h?'selected':''}>${h}</option>`;
-            });
-
-            row.innerHTML = `<div class="flex-1 space-y-2"><div class="flex gap-2"><input type="date" value="${targetDate}" class="rdv-date p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2" onchange="updateRowHours(this)"><select class="rdv-heure p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/2 font-bold text-blue-900 dark:text-sky-400">${optionsHtml}</select></div><div class="flex gap-2"><input type="text" placeholder="Motif" value="${motif}" class="rdv-motif p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-2/5"><input type="number" placeholder="Prix €" value="${prix}" class="rdv-prix p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-1/4"><select class="rdv-paiement p-2 bg-white dark:bg-slate-700 border dark:border-slate-600 rounded-xl text-xs w-7/20"><option value="Espèces" ${paiement==='Espèces'?'selected':''}>Espèces</option><option value="CB" ${paiement==='CB'?'selected':''}>CB</option><option value="Chèque" ${paiement==='Chèque'?'selected':''}>Chèque</option><option value="Virement" ${paiement==='Virement'?'selected':''}>Virement</option></select></div></div><button type="button" onclick="this.parentElement.remove()" class="text-rose-400 p-2.5"><i class="fa-solid fa-trash"></i></button>`;
-            c.appendChild(row);
-        }
-
-        function updateRowHours(dateInput) {
-            let row = dateInput.closest('.rdv-row');
-            let select = row.querySelector('.rdv-heure');
-            let selectedDate = dateInput.value;
-            let currentVal = select.value;
-            let rawHours = getHoursForDate(selectedDate);
-            let optionsHtml = '';
-            rawHours.forEach(h => {
-                optionsHtml += `<option value="${h}" ${currentVal===h?'selected':''}>${h}</option>`;
-            });
-            select.innerHTML = optionsHtml;
-        }
-
-        function savePatient(e) {
-            e.preventDefault();
-            let id = document.getElementById('patient-id').value;
-            let numDossier = document.getElementById('patient-num').value;
-            let nom = document.getElementById('patient-nom').value;
-            let prenom = document.getElementById('patient-prenom').value;
-            let tel = document.getElementById('patient-tel').value;
-            let email = document.getElementById('patient-email').value;
-            let notes = document.getElementById('patient-notes').value;
-            let docs = [...currentPatientDocs];
-            
-            let rdvs = [];
-            document.querySelectorAll('.rdv-row').forEach(row => {
-                rdvs.push({
-                    date: row.querySelector('.rdv-date').value,
-                    heure: row.querySelector('.rdv-heure').value,
-                    motif: row.querySelector('.rdv-motif').value,
-                    prix: row.querySelector('.rdv-prix').value,
-                    paiement: row.querySelector('.rdv-paiement').value
-                });
-            });
-
-            if(id) {
-                let idx = db.patients.findIndex(x => x.id === id);
-                if(idx !== -1) db.patients[idx] = { id, numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs };
-            } else {
-                db.patients.push({ id: Date.now().toString(), numDossier, nom, prenom, prénom: prenom, tel, email, notes, docs, rdvs });
-            }
-            saveData();
-            closePatientModal();
-        }
-
-        function deletePatient(id) {
-            if(confirm("Supprimer ce dossier ?")) { 
-                db.patients = db.patients.filter(x => x.id !== id); 
-                saveData(); 
-            }
-        }
-
-        window.onload = initApp;
-    </script>
+<body>
+<header><div class="wrap"><div><h1>Cabinet de Fred & SCM</h1><small id="hdate"></small></div><button class="btn sm" onclick="toggleTheme()" aria-label="Changer de thème" id="themeBtn">🌙</button></div></header>
+<main>
+<section id="tab-home" class="tab on">
+<div id="backup-warn"></div>
+<div class="stats">
+ <div class="stat"><span class="mut">Patients</span><b id="s-pat">0</b></div>
+ <div class="stat"><span class="mut">RDV cette semaine</span><b id="s-week">0</b></div>
+ <div class="stat"><span class="mut">Honoraires du mois</span><b id="s-ca">0 €</b></div>
+ <div class="stat"><span class="mut">Résultat (honoraires − charges SCM)</span><b id="s-res">0 €</b></div>
+</div>
+<div class="card"><h2>Aujourd’hui <button class="btn p sm" onclick="openRdv()">+ Rendez-vous</button></h2><div id="today"></div></div>
+<div class="card"><h2>Rappels SMS <input type="date" id="sms-date" style="width:auto" onchange="renderSms()"></h2><div id="sms"></div></div>
+</section>
+
+<section id="tab-pat" class="tab">
+<div class="card">
+ <div class="row"><input type="search" id="q" placeholder="Rechercher un nom, un téléphone, un n° de dossier" oninput="renderPatients()"><button class="btn p" onclick="openPatient()">+ Patient</button></div>
+ <div class="row sp" style="margin-top:10px"><span class="mut" id="pcount"></span><label class="btn sm" style="margin:0;color:var(--ink)">Importer un CSV<input type="file" accept=".csv" hidden onchange="importCsv(event)"></label></div>
+</div>
+<div id="plist"></div>
+</section>
+
+<section id="tab-agenda" class="tab">
+<div class="card">
+ <div class="row"><button class="btn" onclick="shiftDay(-1)" aria-label="Jour précédent">‹</button><input type="date" id="ag-date" onchange="renderAgenda()"><button class="btn" onclick="shiftDay(1)" aria-label="Jour suivant">›</button><button class="btn" onclick="goToday()">Aujourd’hui</button></div>
+ <h3 id="ag-label" style="text-transform:capitalize"></h3>
+ <div id="slots"></div>
+</div>
+<div class="card"><h2>Google Agenda</h2><iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border:0;width:100%;height:420px;border-radius:10px;background:#fff" loading="lazy"></iframe></div>
+</section>
+
+<section id="tab-scm" class="tab">
+<div class="card">
+ <h2>SCM Quintozone <input type="month" id="scm-month" style="width:auto" onchange="renderScm()"></h2>
+ <div class="stats" style="margin:0 0 8px"><div class="stat"><span class="mut">Charges du mois</span><b id="scm-total" class="neg">0 €</b></div><div class="stat"><span class="mut">Honoraires du mois</span><b id="scm-ca">0 €</b></div></div>
+ <div class="row sp"><h3 style="margin:10px 0">Factures</h3><button class="btn p sm" onclick="openExp()">+ Facture</button></div>
+ <div id="exps"></div>
+</div>
+<div class="card"><h2>Relevés bancaires <button class="btn g sm" onclick="openBank()">+ Relevé</button></h2><div id="banks"></div></div>
+<div class="card"><h2>Sauvegarde</h2><p class="mut" style="margin-top:0">Patients, rendez-vous, factures et relevés. Pensez à sauvegarder régulièrement : les données sont stockées uniquement sur cet appareil.</p>
+<div class="row"><button class="btn p grow" onclick="exportData()">Sauvegarder</button><label class="btn grow" style="margin:0;justify-content:center;color:var(--ink)">Restaurer<input type="file" accept=".json" hidden onchange="importData(event)"></label></div></div>
+</section>
+</main>
+
+<nav><div class="wrap">
+<button data-t="home" class="on" onclick="tab('home')"><span>🏠</span>Accueil</button>
+<button data-t="pat" onclick="tab('pat')"><span>👥</span>Patients</button>
+<button data-t="agenda" onclick="tab('agenda')"><span>📅</span>Agenda</button>
+<button data-t="scm" onclick="tab('scm')"><span>🏢</span>SCM</button>
+</div></nav>
+<div id="toast" role="status"></div>
+
+<!-- Patient -->
+<div class="modal" id="m-pat" onclick="if(event.target===this)closeM('m-pat')"><div class="sheet">
+<h2 id="pat-title">Dossier patient <button class="btn sm" onclick="closeM('m-pat')">Fermer</button></h2>
+<form onsubmit="savePatient(event)">
+<input type="hidden" id="p-id">
+<label>N° de dossier</label><input id="p-num" required>
+<div class="grid2"><div><label>Nom *</label><input id="p-nom" required autocomplete="off"></div><div><label>Prénom *</label><input id="p-prenom" required autocomplete="off"></div></div>
+<div class="grid2"><div><label>Téléphone</label><input id="p-tel" type="tel" placeholder="06 00 00 00 00"></div><div><label>E-mail</label><input id="p-email" type="email"></div></div>
+<label>Notes</label><textarea id="p-notes" rows="2"></textarea>
+<label>Documents (ordonnances, scans)</label><input type="file" id="p-file" accept="image/*,application/pdf" onchange="addPatientDoc(this)">
+<div id="p-docs"></div>
+<div id="p-rdv-box"><div class="row sp"><h3>Rendez-vous</h3><button type="button" class="btn sm" onclick="openRdv(null,curPid())">+ RDV</button></div><div id="p-rdvs"></div></div>
+<div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn d" id="p-del" onclick="deletePatient()">Supprimer</button><button class="btn p">Enregistrer</button></div>
+</form></div></div>
+
+<!-- RDV -->
+<div class="modal" id="m-rdv" onclick="if(event.target===this)closeM('m-rdv')"><div class="sheet">
+<h2>Rendez-vous <button class="btn sm" onclick="closeM('m-rdv')">Fermer</button></h2>
+<form onsubmit="saveRdv(event)">
+<input type="hidden" id="r-id">
+<label>Patient *</label><select id="r-pat" required></select>
+<div class="grid2"><div><label>Date</label><input type="date" id="r-date" required onchange="fillHours()"></div><div><label>Heure</label><select id="r-heure"></select></div></div>
+<label>Motif</label><input id="r-motif" placeholder="Soin, bilan…">
+<div class="grid2"><div><label>Honoraires (€)</label><input type="number" step="0.01" min="0" id="r-prix"></div><div><label>Paiement</label><select id="r-pay"><option>Espèces</option><option>CB</option><option>Chèque</option><option>Virement</option></select></div></div>
+<div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn d" id="r-del" onclick="deleteRdv()">Supprimer</button><button class="btn p">Enregistrer</button></div>
+</form></div></div>
+
+<!-- Facture -->
+<div class="modal" id="m-exp" onclick="if(event.target===this)closeM('m-exp')"><div class="sheet">
+<h2>Facture SCM <button class="btn sm" onclick="closeM('m-exp')">Fermer</button></h2>
+<form onsubmit="saveExp(event)">
+<label>Date</label><input type="date" id="e-date" required>
+<label>Fournisseur / libellé</label><input id="e-lib" required placeholder="Loyer, électricité, internet…">
+<div class="grid2"><div><label>Montant (€)</label><input type="number" step="0.01" min="0" id="e-mt" required></div><div><label>Catégorie</label><select id="e-cat"><option>Loyer Local</option><option>Énergie & Fluides</option><option>Internet & Télécom</option><option>Entretien & Ménage</option><option>Assurances Locaux</option><option>Frais divers SCM</option></select></div></div>
+<label>Justificatif (photo ou PDF)</label><input type="file" id="e-file" accept="image/*,application/pdf">
+<div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn p">Enregistrer</button></div>
+</form></div></div>
+
+<!-- Relevé -->
+<div class="modal" id="m-bank" onclick="if(event.target===this)closeM('m-bank')"><div class="sheet">
+<h2>Relevé bancaire <button class="btn sm" onclick="closeM('m-bank')">Fermer</button></h2>
+<form onsubmit="saveBank(event)">
+<label>Libellé</label><input id="b-lib" required>
+<label>Fichier (PDF ou image)</label><input type="file" id="b-file" accept="image/*,application/pdf" required>
+<div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn g">Enregistrer</button></div>
+</form></div></div>
+
+<script>
+const KEY='cabinet_fred_scm_data';
+let db={patients:[],scmExpenses:[],bankStatements:[],lastBackup:null};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s)db=Object.assign(db,Array.isArray(s)?{patients:s}:s)}catch(e){}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(r=>({...r,id:r.id||uid()}))});
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ymd=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>ymd(new Date());
+const addDays=(s,n)=>{const [y,m,d]=s.split('-').map(Number);return ymd(new Date(y,m-1,d+n))};
+const fr=(s,o)=>{if(!s)return'';const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('fr-FR',o||{weekday:'long',day:'numeric',month:'long',year:'numeric'})};
+const eur=n=>(Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const full=p=>(p.nom+' '+p.prenom).trim();
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2600)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('Espace plein : sauvegardez puis supprimez des documents.')}renderAll()}
+function openM(id){$(id).classList.add('show')}function closeM(id){$(id).classList.remove('show')}
+function tab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.id==='tab-'+t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0)}
+function toggleTheme(){const d=document.documentElement.classList.toggle('dark');localStorage.setItem('cabinet_theme',d?'dark':'light');$('themeBtn').textContent=d?'☀️':'🌙'}
+
+/* Horaires : créneaux de 30 min ; à partir de novembre 2026, lun-jeu 8h-19h, ven 8h-13h */
+function hoursFor(ds){
+ const [y,m,d]=ds.split('-').map(Number);const w=new Date(y,m-1,d).getDay();
+ if(y>2026||(y===2026&&m>=11)){const H=n=>Array.from({length:n},(_,i)=>String(8+i).padStart(2,'0')+':00');
+  return w>=1&&w<=4?H(11):w===5?H(5):[]}
+ return w===0||w===6?[]:['08:00','09:30','11:00','13:00','14:30','16:00','17:30'];
+}
+const allRdvs=()=>db.patients.flatMap(p=>p.rdvs.map(r=>({p,r})));
+const byTime=(a,b)=>(a.r.date+(a.r.heure||'')).localeCompare(b.r.date+(b.r.heure||''));
+
+function smsLink(p,r){
+ if(!p.tel)return'';
+ const txt=`Bonjour ${p.prenom}, je vous rappelle notre rendez-vous du ${fr(r.date)} à ${r.heure||''}. À bientôt. Bonne journée. Frédéric M`;
+ const sep=/iPhone|iPad|Mac/.test(navigator.userAgent)?'&':'?';
+ return `sms:${p.tel.replace(/[^\d+]/g,'')}${sep}body=${encodeURIComponent(txt)}`;
+}
+function rdvLine(p,r,sms){
+ const l=smsLink(p,r);
+ return `<div class="item"><div><span class="time">${esc(r.heure||'')}</span><a href="#" onclick="openPatient('${p.id}');return false"><b>${esc(full(p))}</b></a> <span class="mut">#${esc(p.numDossier)}</span><div class="mut">${esc(r.motif||'Soin')}${r.prix?' · '+eur(+r.prix):''}</div></div>
+ <div class="row"><button class="btn sm" onclick="openRdv('${r.id}')" aria-label="Modifier">✏️</button>${l?`<a class="btn g sm" href="${l}">SMS</a>`:'<span class="mut">pas de n°</span>'}</div></div>`;
+}
+function renderHome(){
+ const t=today();const list=allRdvs().filter(x=>x.r.date===t).sort(byTime);
+ $('today').innerHTML=list.length?list.map(x=>rdvLine(x.p,x.r)).join(''):'<p class="mut">Aucun rendez-vous aujourd’hui.</p>';
+ const m=t.slice(0,7),end=addDays(t,6);
+ const ca=allRdvs().filter(x=>x.r.date.startsWith(m)).reduce((s,x)=>s+(+x.r.prix||0),0);
+ const ch=(db.scmExpenses||[]).filter(e=>e.date.startsWith(m)).reduce((s,e)=>s+(+e.montant||0),0);
+ $('s-pat').textContent=db.patients.length;
+ $('s-week').textContent=allRdvs().filter(x=>x.r.date>=t&&x.r.date<=end).length;
+ $('s-ca').textContent=eur(ca);$('s-res').textContent=eur(ca-ch);$('s-res').className=ca-ch<0?'neg':'pos';
+ const d=db.lastBackup?(Date.now()-db.lastBackup)/864e5:null;
+ $('backup-warn').innerHTML=d===null||d>30?`<div class="warn">${d===null?'Aucune sauvegarde effectuée.':'Dernière sauvegarde il y a '+Math.floor(d)+' jours.'} <a href="#" onclick="tab('scm');return false">Sauvegarder maintenant</a></div>`:'';
+}
+function renderSms(){
+ const ds=$('sms-date').value;if(!ds)return;
+ const list=allRdvs().filter(x=>x.r.date===ds).sort(byTime);
+ $('sms').innerHTML=`<p class="mut" style="margin-top:0;text-transform:capitalize">${fr(ds)}</p>`+(list.length?list.map(x=>rdvLine(x.p,x.r)).join(''):'<p class="mut">Aucun rendez-vous ce jour-là.</p>');
+}
+function renderPatients(){
+ const q=$('q').value.toLowerCase().trim();
+ const l=db.patients.filter(p=>!q||(full(p)+' '+p.numDossier+' '+(p.tel||'')).toLowerCase().includes(q)).sort((a,b)=>full(a).localeCompare(full(b),'fr'));
+ $('pcount').textContent=l.length+' patient'+(l.length>1?'s':'');
+ const t=today();
+ $('plist').innerHTML=l.length?l.map(p=>{
+  const next=p.rdvs.filter(r=>r.date>=t).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const tot=p.rdvs.reduce((s,r)=>s+(+r.prix||0),0);
+  return `<div class="card"><div class="row sp"><div><span class="chip">#${esc(p.numDossier)}</span> <b>${esc(full(p))}</b>
+  <div class="mut">${p.tel?`<a href="tel:${esc(p.tel)}">${esc(p.tel)}</a>`:'Pas de téléphone'}${p.email?' · '+esc(p.email):''}</div>
+  <div class="mut">${next?'Prochain : '+fr(next.date,{weekday:'short',day:'numeric',month:'short'})+' à '+esc(next.heure):'Aucun RDV à venir'} · ${p.rdvs.length} séance(s) · ${eur(tot)}</div>
+  ${p.notes?`<div class="mut"><i>${esc(p.notes)}</i></div>`:''}</div>
+  <div class="row" style="flex-direction:column"><button class="btn sm" onclick="openPatient('${p.id}')">Ouvrir</button><button class="btn p sm" onclick="openRdv(null,'${p.id}')">+ RDV</button></div></div></div>`}).join(''):'<div class="card mut">Aucun patient trouvé.</div>';
+}
+function renderAgenda(){
+ const ds=$('ag-date').value||today();$('ag-label').textContent=fr(ds);
+ const hours=hoursFor(ds),day=allRdvs().filter(x=>x.r.date===ds);
+ const times=[...new Set([...hours,...day.map(x=>x.r.heure)])].sort();
+ if(!times.length){$('slots').innerHTML='<p class="mut">Cabinet fermé ce jour.</p>';return}
+ $('slots').innerHTML=times.map(h=>{
+  const here=day.filter(x=>x.r.heure===h);
+  if(here.length)return here.map(x=>`<div class="busy"><div><span class="time">${h}</span><b>${esc(full(x.p))}</b><div class="mut">${esc(x.r.motif||'Soin')}${x.r.prix?' · '+eur(+x.r.prix):''}</div></div><button class="btn sm" onclick="openRdv('${x.r.id}')">Modifier</button></div>`).join('');
+  return `<div class="free"><span><span class="time" style="background:none">${h}</span>Libre</span><button class="btn sm" onclick="openRdv(null,null,'${ds}','${h}')">Réserver</button></div>`}).join('');
+}
+function shiftDay(n){$('ag-date').value=addDays($('ag-date').value||today(),n);renderAgenda()}
+function goToday(){$('ag-date').value=today();renderAgenda()}
+function renderScm(){
+ const m=$('scm-month').value||today().slice(0,7);
+ const l=(db.scmExpenses||[]).filter(e=>e.date.startsWith(m)).sort((a,b)=>b.date.localeCompare(a.date));
+ $('scm-total').textContent=eur(l.reduce((s,e)=>s+(+e.montant||0),0));
+ $('scm-ca').textContent=eur(allRdvs().filter(x=>x.r.date.startsWith(m)).reduce((s,x)=>s+(+x.r.prix||0),0));
+ $('exps').innerHTML=l.length?l.map(e=>`<div class="item"><div><b>${esc(e.libelle)}</b> <span class="chip">${esc(e.categorie)}</span><div class="mut">${fr(e.date,{day:'numeric',month:'long'})}${e.doc?` · <a href="#" onclick="openDoc('e','${e.id}');return false">Voir la facture</a>`:''}</div></div><div class="row"><b class="neg">−${eur(+e.montant)}</b><button class="btn d sm" onclick="delExp('${e.id}')" aria-label="Supprimer">🗑</button></div></div>`).join(''):'<p class="mut">Aucune facture ce mois-ci.</p>';
+ const b=db.bankStatements||[];
+ $('banks').innerHTML=b.length?b.map(x=>`<div class="item"><div><b>${esc(x.libelle)}</b><div class="mut">Ajouté le ${esc(x.dateAjout)} · <a href="#" onclick="openDoc('b','${x.id}');return false">Ouvrir</a></div></div><button class="btn d sm" onclick="delBank('${x.id}')" aria-label="Supprimer">🗑</button></div>`).join(''):'<p class="mut">Aucun relevé enregistré.</p>';
+}
+function renderAll(){renderHome();renderSms();renderPatients();renderAgenda();renderScm()}
+
+/* Documents */
+function fileData(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>{
+ if(!f.type.startsWith('image/'))return res(r.result);
+ const im=new Image();im.onload=()=>{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.75))};im.onerror=()=>res(r.result);im.src=r.result};r.readAsDataURL(f)})}
+async function openDoc(kind,id,idx){
+ let url;
+ if(kind==='p')url=curP().docs[idx].data;
+ else url=(kind==='e'?db.scmExpenses:db.bankStatements).find(x=>x.id===id).doc;
+ const w=window.open('','_blank');
+ const b=await (await fetch(url)).blob();const u=URL.createObjectURL(b);
+ if(w)w.location=u;else location.href=u;
+}
+
+/* Patients */
+let tmpDocs=[];
+const curPid=()=>$('p-id').value;
+const curP=()=>db.patients.find(p=>p.id===curPid());
+function openPatient(id){
+ const p=id?db.patients.find(x=>x.id===id):null;
+ $('p-id').value=p?p.id:'';
+ let n=206;db.patients.forEach(x=>{const v=parseInt(x.numDossier);if(v>n)n=v});
+ $('p-num').value=p?p.numDossier:n+1;$('p-nom').value=p?p.nom:'';$('p-prenom').value=p?p.prenom:'';
+ $('p-tel').value=p?.tel||'';$('p-email').value=p?.email||'';$('p-notes').value=p?.notes||'';$('p-file').value='';
+ tmpDocs=p?[...p.docs]:[];
+ $('pat-title').firstChild.textContent=p?'Dossier '+full(p)+' ':'Nouveau patient ';
+ $('p-rdv-box').style.display=p?'block':'none';$('p-del').style.display=p?'inline-flex':'none';
+ renderPatDocs();renderPatRdvs();openM('m-pat');
+}
+function renderPatDocs(){
+ $('p-docs').innerHTML=tmpDocs.map((d,i)=>`<div class="item"><a href="#" onclick="openDoc('p',null,${i});return false">📎 ${esc(d.name)}</a><button type="button" class="btn d sm" onclick="tmpDocs.splice(${i},1);renderPatDocs()">Retirer</button></div>`).join('');
+}
+function renderPatRdvs(){
+ const p=curP();if(!p)return;
+ const l=[...p.rdvs].sort((a,b)=>(b.date+b.heure).localeCompare(a.date+a.heure));
+ $('p-rdvs').innerHTML=l.length?l.map(r=>`<div class="item"><div><b>${fr(r.date,{day:'numeric',month:'short',year:'numeric'})}</b> à ${esc(r.heure)}<div class="mut">${esc(r.motif||'Soin')}${r.prix?' · '+eur(+r.prix)+' ('+esc(r.pay||r.paiement||'')+')':''}</div></div><button type="button" class="btn sm" onclick="openRdv('${r.id}')">Modifier</button></div>`).join(''):'<p class="mut">Aucun rendez-vous.</p>';
+}
+async function addPatientDoc(inp){const f=inp.files[0];if(!f)return;tmpDocs.push({name:f.name,data:await fileData(f)});inp.value='';renderPatDocs()}
+function savePatient(e){
+ e.preventDefault();
+ const id=curPid(),num=$('p-num').value.trim();
+ if(db.patients.some(p=>p.numDossier===num&&p.id!==id)&&!confirm('Le n° de dossier '+num+' existe déjà. Continuer ?'))return;
+ const data={numDossier:num,nom:$('p-nom').value.trim(),prenom:$('p-prenom').value.trim(),tel:$('p-tel').value.trim(),email:$('p-email').value.trim(),notes:$('p-notes').value.trim(),docs:tmpDocs};
+ if(id)Object.assign(db.patients.find(p=>p.id===id),data);else db.patients.push({id:uid(),rdvs:[],...data});
+ save();closeM('m-pat');toast('Dossier enregistré');
+}
+function deletePatient(){const p=curP();if(p&&confirm('Supprimer le dossier de '+full(p)+' et tous ses rendez-vous ?')){db.patients=db.patients.filter(x=>x.id!==p.id);save();closeM('m-pat');toast('Dossier supprimé')}}
+
+/* Rendez-vous */
+function fillHours(sel){
+ const ds=$('r-date').value;let h=ds?hoursFor(ds):[];
+ const cur=sel||$('r-heure').value;if(cur&&!h.includes(cur))h=[...h,cur].sort();
+ $('r-heure').innerHTML=h.length?h.map(x=>`<option ${x===cur?'selected':''}>${x}</option>`).join(''):'<option value="">Fermé</option>';
+}
+function openRdv(rid,pid,date,heure){
+ $('r-pat').innerHTML='<option value="">Choisir un patient…</option>'+[...db.patients].sort((a,b)=>full(a).localeCompare(full(b),'fr')).map(p=>`<option value="${p.id}">${esc(full(p))} (#${esc(p.numDossier)})</option>`).join('');
+ const f=rid?allRdvs().find(x=>x.r.id===rid):null;
+ $('r-id').value=rid||'';$('r-pat').value=f?f.p.id:(pid||'');
+ $('r-date').value=f?f.r.date:(date||today());
+ $('r-motif').value=f?.r.motif||'';$('r-prix').value=f?.r.prix||'';$('r-pay').value=f?(f.r.pay||f.r.paiement||'Espèces'):'Espèces';
+ fillHours(f?f.r.heure:heure);
+ $('r-del').style.display=rid?'inline-flex':'none';openM('m-rdv');
+}
+function saveRdv(e){
+ e.preventDefault();
+ const rid=$('r-id').value,pid=$('r-pat').value,date=$('r-date').value,heure=$('r-heure').value;
+ if(!heure){toast('Le cabinet est fermé ce jour-là.');return}
+ const clash=allRdvs().find(x=>x.r.date===date&&x.r.heure===heure&&x.r.id!==rid);
+ if(clash&&!confirm(`${full(clash.p)} a déjà un rendez-vous à ${heure}. Ajouter quand même ?`))return;
+ const r={id:rid||uid(),date,heure,motif:$('r-motif').value.trim(),prix:$('r-prix').value,pay:$('r-pay').value};
+ db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));
+ db.patients.find(p=>p.id===pid).rdvs.push(r);
+ save();closeM('m-rdv');if($('m-pat').classList.contains('show'))renderPatRdvs();toast('Rendez-vous enregistré');
+}
+function deleteRdv(){const rid=$('r-id').value;if(!confirm('Supprimer ce rendez-vous ?'))return;db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));save();closeM('m-rdv');if($('m-pat').classList.contains('show'))renderPatRdvs();toast('Rendez-vous supprimé')}
+
+/* SCM */
+function openExp(){$('e-date').value=today();$('e-lib').value='';$('e-mt').value='';$('e-file').value='';openM('m-exp')}
+async function saveExp(e){
+ e.preventDefault();const f=$('e-file').files[0];
+ (db.scmExpenses=db.scmExpenses||[]).push({id:uid(),date:$('e-date').value,libelle:$('e-lib').value.trim(),montant:$('e-mt').value,categorie:$('e-cat').value,doc:f?await fileData(f):null});
+ $('scm-month').value=$('e-date').value.slice(0,7);save();closeM('m-exp');toast('Facture enregistrée');
+}
+function delExp(id){if(confirm('Supprimer cette facture ?')){db.scmExpenses=db.scmExpenses.filter(x=>x.id!==id);save()}}
+function openBank(){$('b-lib').value='Relevé '+new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'});$('b-file').value='';openM('m-bank')}
+async function saveBank(e){
+ e.preventDefault();const f=$('b-file').files[0];if(!f)return;
+ (db.bankStatements=db.bankStatements||[]).push({id:uid(),libelle:$('b-lib').value.trim(),dateAjout:new Date().toLocaleDateString('fr-FR'),doc:await fileData(f)});
+ save();closeM('m-bank');toast('Relevé enregistré');
+}
+function delBank(id){if(confirm('Supprimer ce relevé ?')){db.bankStatements=db.bankStatements.filter(x=>x.id!==id);save()}}
+
+/* Sauvegarde / import */
+function exportData(){
+ db.lastBackup=Date.now();localStorage.setItem(KEY,JSON.stringify(db));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));
+ a.download='cabinet_fred_et_scm_'+today()+'.json';document.body.appendChild(a);a.click();a.remove();renderAll();toast('Sauvegarde téléchargée');
+}
+function importData(ev){
+ const f=ev.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{try{const s=JSON.parse(r.result);if(!confirm('Remplacer toutes les données actuelles par cette sauvegarde ?'))return;
+  db=Object.assign({patients:[],scmExpenses:[],bankStatements:[],lastBackup:null},Array.isArray(s)?{patients:s}:s);
+  db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(x=>({...x,id:x.id||uid()}))});
+  save();toast('Sauvegarde restaurée')}catch(e){toast('Fichier illisible.')}};
+ r.readAsText(f,'UTF-8');ev.target.value='';
+}
+function importCsv(ev){
+ const f=ev.target.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{
+  const lines=r.result.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return;
+  const sep=(lines[0].match(/;/g)||[]).length>=(lines[0].match(/,/g)||[]).length?';':',';
+  let n=206;db.patients.forEach(x=>{const v=parseInt(x.numDossier);if(v>n)n=v});let added=0,skipped=0;
+  lines.forEach((l,i)=>{const c=l.split(sep).map(x=>x.replace(/^["'\s]+|["'\s]+$/g,''));
+   if(i===0&&/nom/i.test(c[0]))return;
+   const [nom,prenom,tel,num]=c;if(!nom||!prenom)return;
+   if(db.patients.some(p=>p.nom.toLowerCase()===nom.toLowerCase()&&p.prenom.toLowerCase()===prenom.toLowerCase())){skipped++;return}
+   db.patients.push({id:uid(),numDossier:num||String(++n),nom,prenom,tel:tel||'',email:'',notes:'',docs:[],rdvs:[]});added++});
+  save();toast(added+' patient(s) importé(s)'+(skipped?', '+skipped+' déjà présent(s)':''));
+ };
+ r.readAsText(f,'UTF-8');ev.target.value='';
+}
+
+/* Démarrage */
+if(localStorage.getItem('cabinet_theme')==='dark'||(!localStorage.getItem('cabinet_theme')&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');$('themeBtn').textContent='☀️'}
+$('hdate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+$('sms-date').value=addDays(today(),1);$('ag-date').value=today();$('scm-month').value=today().slice(0,7);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show'))});
+renderAll();
+</script>
 </body>
 </html>
