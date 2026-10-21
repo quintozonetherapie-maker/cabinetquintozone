@@ -303,9 +303,14 @@ function deletePatient(){const p=curP();if(p&&confirm('Supprimer le dossier de '
 
 /* Rendez-vous */
 function fillHours(sel){
- const ds=$('r-date').value;let h=ds?hoursFor(ds):[];
- const cur=sel||$('r-heure').value;if(cur&&!h.includes(cur))h=[...h,cur].sort();
- $('r-heure').innerHTML=h.length?h.map(x=>`<option ${x===cur?'selected':''}>${x}</option>`).join(''):'<option value="">Fermé</option>';
+ const ds=$('r-date').value,rid=$('r-id').value;
+ const taken=allRdvs().filter(x=>x.r.date===ds&&x.r.id!==rid).map(x=>x.r.heure);
+ let h=ds?hoursFor(ds):[];
+ const own=rid?allRdvs().find(x=>x.r.id===rid):null;
+ if(own&&own.r.date===ds&&own.r.heure&&!h.includes(own.r.heure))h=[...h,own.r.heure];
+ h=h.filter(x=>!taken.includes(x)).sort();
+ const cur=sel||$('r-heure').value;
+ $('r-heure').innerHTML=h.length?h.map(x=>`<option ${x===cur?'selected':''}>${x}</option>`).join(''):'<option value="">Aucun créneau libre</option>';
 }
 function openRdv(rid,pid,date,heure){
  $('r-pat').innerHTML='<option value="">Choisir un patient…</option>'+[...db.patients].sort((a,b)=>full(a).localeCompare(full(b),'fr')).map(p=>`<option value="${p.id}">${esc(full(p))} (#${esc(p.numDossier)})</option>`).join('');
@@ -319,9 +324,9 @@ function openRdv(rid,pid,date,heure){
 function saveRdv(e){
  e.preventDefault();
  const rid=$('r-id').value,pid=$('r-pat').value,date=$('r-date').value,heure=$('r-heure').value;
- if(!heure){toast('Le cabinet est fermé ce jour-là.');return}
+ if(!heure){toast('Aucun créneau libre ce jour-là.');return}
  const clash=allRdvs().find(x=>x.r.date===date&&x.r.heure===heure&&x.r.id!==rid);
- if(clash&&!confirm(`${full(clash.p)} a déjà un rendez-vous à ${heure}. Ajouter quand même ?`))return;
+ if(clash){toast('Créneau déjà pris par '+full(clash.p)+'.');fillHours();return}
  const r={id:rid||uid(),date,heure,motif:$('r-motif').value.trim(),prix:$('r-prix').value,pay:$('r-pay').value};
  db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));
  db.patients.find(p=>p.id===pid).rdvs.push(r);
