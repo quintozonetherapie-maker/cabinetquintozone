@@ -63,7 +63,7 @@ nav button.on{color:var(--pri)}
 <header><div class="wrap"><div><h1>Cabinet de Fred & SCM</h1><small id="hdate"></small></div><button class="btn sm" onclick="toggleTheme()" aria-label="Changer de thème" id="themeBtn">🌙</button></div></header>
 <main>
 <section id="tab-home" class="tab on">
-<div id="backup-warn"></div>
+<div id="link-banner"></div><div id="backup-warn"></div>
 <div class="stats">
  <div class="stat"><span class="mut">Patients</span><b id="s-pat">0</b></div>
  <div class="stat"><span class="mut">RDV cette semaine</span><b id="s-week">0</b></div>
@@ -101,6 +101,7 @@ nav button.on{color:var(--pri)}
 </div>
 <div class="card"><h2>Relevés bancaires <button class="btn g sm" onclick="openBank()">+ Relevé</button></h2><div id="banks"></div></div>
 <div class="card"><h2>Sauvegarde</h2><p class="mut" style="margin-top:0">Patients, rendez-vous, factures et relevés. Pensez à sauvegarder régulièrement : les données sont stockées uniquement sur cet appareil.</p>
+<div id="link-box" style="margin-bottom:12px"></div>
 <div class="row"><button class="btn p grow" onclick="exportData()">Sauvegarder</button><label class="btn grow" style="margin:0;justify-content:center;color:var(--ink)">Restaurer<input type="file" accept=".json" hidden onchange="importData(event)"></label></div></div>
 </section>
 </main>
@@ -186,7 +187,7 @@ const fr=(s,o)=>{if(!s)return'';const [y,m,d]=s.split('-').map(Number);return ne
 const eur=n=>(Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
 const full=p=>(p.nom+' '+p.prenom).trim();
 function toast(m,ms){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),ms||2600)}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('Espace plein : sauvegardez puis supprimez des documents.')}renderAll()}
+function save(){db.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('Espace plein : sauvegardez puis supprimez des documents.')}renderAll();queueLinked()}
 function openM(id){$(id).classList.add('show')}function closeM(id){$(id).classList.remove('show')}
 function tab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.toggle('on',e.id==='tab-'+t));document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));scrollTo(0,0)}
 function toggleTheme(){const d=document.documentElement.classList.toggle('dark');localStorage.setItem('cabinet_theme',d?'dark':'light');$('themeBtn').textContent=d?'☀️':'🌙'}
@@ -274,7 +275,7 @@ function renderScm(){
  const b=db.bankStatements||[];
  $('banks').innerHTML=b.length?b.map(x=>`<div class="item"><div><b>${esc(x.libelle)}</b><div class="mut">Ajouté le ${esc(x.dateAjout)} · <a href="#" onclick="openDoc('b','${x.id}');return false">Ouvrir</a></div></div><button class="btn d sm" onclick="delBank('${x.id}')" aria-label="Supprimer">🗑</button></div>`).join(''):'<p class="mut">Aucun relevé enregistré.</p>';
 }
-function renderAll(){renderHome();renderSms();renderPatients();renderAgenda();renderScm()}
+function renderAll(){renderLink();renderHome();renderSms();renderPatients();renderAgenda();renderScm()}
 
 /* Documents */
 function fileData(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>{
@@ -480,12 +481,69 @@ function applyIcs(){
  save();closeM('m-ics');toast(n+' rendez-vous importé(s)'+(bad?', '+bad+' ignoré(s) (créneau pris)':''),5000);
 }
 
+/* Sauvegarde liée à un fichier (Chrome / Edge) */
+const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('cabinet_link',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
+const idbGet=async k=>{const d=await idb();return new Promise(res=>{const q=d.transaction('h').objectStore('h').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})};
+const idbSet=async(k,v)=>{const d=await idb();return new Promise(res=>{const t=d.transaction('h','readwrite');t.objectStore('h').put(v,k);t.oncomplete=()=>res();t.onerror=()=>res()})};
+let linkH=null,linkState='none',linkRemote=null,linkWT=null;
+const canLink=()=>typeof window.showSaveFilePicker==='function';
+async function readLinked(){return JSON.parse(await (await linkH.getFile()).text())}
+async function syncCheck(){
+ try{const r=await readLinked();if(r&&Array.isArray(r.patients)&&(r.savedAt||0)>(db.savedAt||0)){linkRemote=r;linkState='behind';return}}catch(e){}
+ linkState='ready';
+}
+async function initLink(){
+ if(!canLink()){renderLink();return}
+ try{linkH=await idbGet('h')}catch(e){linkH=null}
+ if(!linkH){renderLink();return}
+ try{if(await linkH.queryPermission({mode:'readwrite'})==='granted')await syncCheck();else linkState='needs'}catch(e){linkState='needs'}
+ renderLink();
+}
+async function writeNow(){
+ if(!linkH||linkState!=='ready')return;
+ try{db.lastBackup=Date.now();const w=await linkH.createWritable();await w.write(JSON.stringify(db));await w.close();renderHome();renderLink()}
+ catch(e){linkState='needs';renderLink()}
+}
+function queueLinked(){if(linkState!=='ready')return;clearTimeout(linkWT);linkWT=setTimeout(writeNow,1200)}
+function applyDb(s){
+ db=Object.assign({patients:[],scmExpenses:[],bankStatements:[],lastBackup:null},s);
+ db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(x=>({...x,id:x.id||uid(),heure:tnorm(x.heure),date:String(x.date||'').slice(0,10)}))});
+ linkState='ready';save();
+}
+async function linkFile(){
+ if(!canLink()){toast('Indisponible dans ce navigateur : utilise Chrome ou Edge.',6000);return}
+ try{
+  const h=await showSaveFilePicker({suggestedName:'cabinet_sauvegarde.json',types:[{description:'Sauvegarde',accept:{'application/json':['.json']}}]});
+  linkH=h;await idbSet('h',h);linkState='ready';
+  try{const r=await readLinked();
+   if(r&&Array.isArray(r.patients)&&(r.savedAt||0)>(db.savedAt||0)&&confirm('Ce fichier contient une sauvegarde plus récente que les données de cet appareil.\n\nOK = charger ce fichier\nAnnuler = l’écraser avec les données actuelles')){applyDb(r);toast('Sauvegarde chargée et liée');return}}catch(e){}
+  await writeNow();toast('Fichier lié : la sauvegarde se fera automatiquement');
+ }catch(e){if(e&&e.name!=='AbortError')toast('Impossible de lier le fichier.',5000)}
+}
+async function reconnect(){
+ try{if(await linkH.requestPermission({mode:'readwrite'})!=='granted')return;await syncCheck();renderLink();if(linkState==='ready')writeNow()}
+ catch(e){toast('Impossible de se reconnecter au fichier.',5000)}
+}
+function loadRemote(){
+ if(!linkRemote)return;
+ if(confirm('Remplacer les données de cet appareil par la sauvegarde du '+new Date(linkRemote.savedAt).toLocaleString('fr-FR')+' ?')){applyDb(linkRemote);linkRemote=null;toast('Sauvegarde chargée')}
+}
+async function unlink(){if(confirm('Arrêter la sauvegarde automatique vers ce fichier ? (le fichier n’est pas supprimé)')){await idbSet('h',null);linkH=null;linkState='none';renderLink()}}
+function renderLink(){
+ const nm=linkH?esc(linkH.name):'',b=$('link-banner'),box=$('link-box');if(!b||!box)return;
+ b.innerHTML=linkState==='needs'?`<div class="warn">Sauvegarde liée « ${nm} » : autorisation à renouveler. <button class="btn sm" onclick="reconnect()">Reconnecter</button></div>`
+  :linkState==='behind'?`<div class="warn">Le fichier « ${nm} » est plus récent que les données de cet appareil (${new Date(linkRemote.savedAt).toLocaleString('fr-FR')}). <button class="btn sm" onclick="loadRemote()">Charger la dernière sauvegarde</button></div>`:'';
+ box.innerHTML=!canLink()?'<p class="mut">Sauvegarde automatique vers un fichier : disponible avec Chrome ou Edge.</p>'
+  :linkState==='none'?'<button class="btn p" onclick="linkFile()">Lier un fichier de sauvegarde</button><p class="mut">Choisis ton dossier Google Drive : le fichier est réécrit après chaque modification.</p>'
+  :`<p class="mut" style="margin-top:0">Fichier lié : <b>${nm}</b> — ${linkState==='ready'?'à jour'+(db.lastBackup?' ('+new Date(db.lastBackup).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')':''):linkState==='behind'?'plus récent que cet appareil':'autorisation requise'}</p><div class="row"><button class="btn sm" onclick="${linkState==='behind'?'loadRemote()':linkState==='needs'?'reconnect()':'writeNow()'}">${linkState==='behind'?'Charger':linkState==='needs'?'Reconnecter':'Sauvegarder maintenant'}</button><button class="btn sm" onclick="unlink()">Dissocier</button></div>`;
+}
+
 /* Démarrage */
 if(localStorage.getItem('cabinet_theme')==='dark'||(!localStorage.getItem('cabinet_theme')&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');$('themeBtn').textContent='☀️'}
 $('hdate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 $('sms-date').value=addDays(today(),1);$('ag-date').value=today();$('scm-month').value=today().slice(0,7);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show'))});
-renderAll();
+renderAll();initLink();
 </script>
 </body>
 </html>
