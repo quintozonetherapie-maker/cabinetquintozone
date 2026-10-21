@@ -136,6 +136,7 @@ nav button.on{color:var(--pri)}
 <div class="grid2"><div><label>Date</label><input type="date" id="r-date" required onchange="fillHours()"></div><div><label>Heure</label><select id="r-heure"></select></div></div>
 <label>Motif</label><input id="r-motif" placeholder="Soin, bilan…">
 <div class="grid2"><div><label>Honoraires (€)</label><input type="number" step="0.01" min="0" id="r-prix"></div><div><label>Paiement</label><select id="r-pay"><option>Espèces</option><option>CB</option><option>Chèque</option><option>Virement</option></select></div></div>
+<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="r-gcal" style="width:auto"> Ajouter à Google Agenda</label>
 <div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn d" id="r-del" onclick="deleteRdv()">Supprimer</button><button class="btn p">Enregistrer</button></div>
 </form></div></div>
 
@@ -191,6 +192,12 @@ const allRdvs=()=>db.patients.flatMap(p=>p.rdvs.map(r=>({p,r})));
 const byTime=(a,b)=>(a.r.date+(a.r.heure||'')).localeCompare(b.r.date+(b.r.heure||''));
 
 function smsText(p,r){return `Bonjour ${p.prenom}, je vous rappelle notre rendez-vous du ${fr(r.date)} à ${r.heure||''}. À bientôt. Bonne journée. Frédéric M`}
+function gcalUrl(p,r){
+ const [y,m,d]=r.date.split('-').map(Number),[h,mi]=(r.heure||'09:00').split(':').map(Number);
+ const f=t=>ymd(t).replace(/-/g,'')+'T'+String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+'00';
+ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&dates='+f(new Date(y,m-1,d,h,mi))+'/'+f(new Date(y,m-1,d,h+1,mi))+'&ctz=Europe/Paris&details='+encodeURIComponent('Dossier #'+p.numDossier+(r.motif?' - '+r.motif:''));
+}
+function addGcal(rid){const x=allRdvs().find(x=>x.r.id===rid);if(x)window.open(gcalUrl(x.p,x.r),'_blank')}
 function sendSms(rid){
  const x=allRdvs().find(x=>x.r.id===rid);if(!x||!x.p.tel)return;
  const p=x.p,txt=smsText(p,x.r),tel=p.tel.replace(/[^\d+]/g,''),ua=navigator.userAgent;
@@ -203,7 +210,7 @@ function sendSms(rid){
 function rdvLine(p,r,sms){
  const l=p.tel;
  return `<div class="item"><div><span class="time">${esc(r.heure||'')}</span><a href="#" onclick="openPatient('${p.id}');return false"><b>${esc(full(p))}</b></a> <span class="mut">#${esc(p.numDossier)}</span><div class="mut">${esc(r.motif||'Soin')}${r.prix?' · '+eur(+r.prix):''}</div></div>
- <div class="row"><button class="btn sm" onclick="openRdv('${r.id}')" aria-label="Modifier">✏️</button>${l?`<button class="btn g sm" onclick="sendSms('${r.id}')">SMS</button>`:'<span class="mut">pas de n°</span>'}</div></div>`;
+ <div class="row"><button class="btn sm" onclick="addGcal('${r.id}')" aria-label="Ajouter à Google Agenda" title="Ajouter à Google Agenda">📅</button><button class="btn sm" onclick="openRdv('${r.id}')" aria-label="Modifier">✏️</button>${l?`<button class="btn g sm" onclick="sendSms('${r.id}')">SMS</button>`:'<span class="mut">pas de n°</span>'}</div></div>`;
 }
 function renderHome(){
  const t=today();const list=allRdvs().filter(x=>x.r.date===t).sort(byTime);
@@ -324,6 +331,7 @@ function openRdv(rid,pid,date,heure){
  $('r-date').value=f?f.r.date:(date||today());
  $('r-motif').value=f?.r.motif||'';$('r-prix').value=f?.r.prix||'';$('r-pay').value=f?(f.r.pay||f.r.paiement||'Espèces'):'Espèces';
  fillHours(f?f.r.heure:heure);
+ $('r-gcal').checked=!rid;
  $('r-del').style.display=rid?'inline-flex':'none';openM('m-rdv');
 }
 function saveRdv(e){
@@ -336,8 +344,10 @@ function saveRdv(e){
  if(same&&!confirm('Ce patient a déjà un rendez-vous ce jour-là à '+same.r.heure+'. Ajouter un second rendez-vous ?'))return;
  const r={id:rid||uid(),date,heure,motif:$('r-motif').value.trim(),prix:$('r-prix').value,pay:$('r-pay').value};
  db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));
- db.patients.find(p=>p.id===pid).rdvs.push(r);
+ const pt=db.patients.find(p=>p.id===pid);pt.rdvs.push(r);
+ const gc=$('r-gcal').checked;
  save();closeM('m-rdv');if($('m-pat').classList.contains('show'))renderPatRdvs();toast('Rendez-vous enregistré');
+ if(gc)window.open(gcalUrl(pt,r),'_blank');
 }
 function deleteRdv(){const rid=$('r-id').value;if(!confirm('Supprimer ce rendez-vous ?'))return;db.patients.forEach(p=>p.rdvs=p.rdvs.filter(x=>x.id!==rid));save();closeM('m-rdv');if($('m-pat').classList.contains('show'))renderPatRdvs();toast('Rendez-vous supprimé')}
 
