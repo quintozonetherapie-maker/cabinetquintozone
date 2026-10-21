@@ -88,7 +88,8 @@ nav button.on{color:var(--pri)}
  <h3 id="ag-label" style="text-transform:capitalize"></h3>
  <div id="slots"></div>
 </div>
-<div class="card"><h2>Google Agenda</h2><iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border:0;width:100%;height:420px;border-radius:10px;background:#fff" loading="lazy"></iframe></div>
+<div class="card"><h2>Google Agenda <label class="btn sm" style="margin:0;color:var(--ink)">Importer (.ics)<input type="file" accept=".ics,.zip" hidden onchange="readIcs(event)"></label></h2>
+<p class="mut" style="margin-top:0">Pour importer : sur calendar.google.com, Paramètres, « Importer et exporter », « Exporter ». Décompresse le .zip puis choisis le fichier .ics.</p><iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border:0;width:100%;height:420px;border-radius:10px;background:#fff" loading="lazy"></iframe></div>
 </section>
 
 <section id="tab-scm" class="tab">
@@ -139,6 +140,15 @@ nav button.on{color:var(--pri)}
 <label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="r-gcal" style="width:auto"> Ajouter à Google Agenda</label>
 <div class="row" style="margin-top:14px;justify-content:flex-end"><button type="button" class="btn d" id="r-del" onclick="deleteRdv()">Supprimer</button><button class="btn p">Enregistrer</button></div>
 </form></div></div>
+
+<!-- Import Google Agenda -->
+<div class="modal" id="m-ics" onclick="if(event.target===this)closeM('m-ics')"><div class="sheet">
+<h2>Import Google Agenda <button class="btn sm" onclick="closeM('m-ics')">Fermer</button></h2>
+<p class="mut" id="ics-info" style="margin-top:0"></p>
+<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="ics-past" style="width:auto" onchange="renderIcs()"> Inclure les événements passés</label>
+<div id="ics-list"></div>
+<div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn p" onclick="applyIcs()">Importer la sélection</button></div>
+</div></div>
 
 <!-- Facture -->
 <div class="modal" id="m-exp" onclick="if(event.target===this)closeM('m-exp')"><div class="sheet">
@@ -395,6 +405,79 @@ function importCsv(ev){
   save();toast(added+' patient(s) importé(s)'+(skipped?', '+skipped+' déjà présent(s)':''));
  };
  r.readAsText(f,'UTF-8');ev.target.value='';
+}
+
+/* Import Google Agenda (.ics) */
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-'’_]/g,' ').replace(/\s+/g,' ');
+let icsEv=[],icsSkip={};
+function icsDate(v){
+ const m=v.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})?(Z)?$/);if(!m)return null;
+ const d=m[7]?new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5])):new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]);
+ return{date:ymd(d),heure:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+}
+function parseIcs(txt){
+ const lines=txt.replace(/\r\n?/g,'\n').replace(/\n[ \t]/g,'').split('\n');
+ const out=[];icsSkip={allday:0,rrule:0,cancelled:0};let cur=null;
+ for(const l of lines){
+  if(l==='BEGIN:VEVENT'){cur={};continue}
+  if(l==='END:VEVENT'){
+   if(cur){
+    if(cur.status==='CANCELLED')icsSkip.cancelled++;
+    else if(cur.rrule)icsSkip.rrule++;
+    else{const d=cur.start?icsDate(cur.start):null;if(!d)icsSkip.allday++;else out.push({uid:cur.uid||'',summary:cur.summary||'',desc:cur.desc||'',...d})}
+   }
+   cur=null;continue}
+  if(!cur)continue;
+  const i=l.indexOf(':');if(i<0)continue;
+  const name=l.slice(0,i).split(';')[0].toUpperCase(),v=l.slice(i+1).replace(/\\n/gi,' ').replace(/\\([,;\\])/g,'$1');
+  if(name==='DTSTART')cur.start=v;else if(name==='SUMMARY')cur.summary=v;else if(name==='DESCRIPTION')cur.desc=v;
+  else if(name==='UID')cur.uid=v;else if(name==='STATUS')cur.status=v.toUpperCase();else if(name==='RRULE')cur.rrule=true;
+ }
+ return out;
+}
+function matchPatient(e){
+ const hay=' '+norm(e.summary+' '+e.desc)+' ';
+ const n=hay.match(/#\s*(\d+)/);
+ if(n){const p=db.patients.find(p=>p.numDossier===n[1]);if(p)return p.id}
+ const has=w=>w&&hay.includes(' '+w+' ')||(w&&new RegExp('(^|[^a-z0-9])'+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-z0-9]|$)').test(hay));
+ const hits=db.patients.filter(p=>has(norm(p.nom).trim())&&has(norm(p.prenom).trim()));
+ return hits.length===1?hits[0].id:'';
+}
+function readIcs(ev){
+ const f=ev.target.files[0];ev.target.value='';if(!f)return;
+ if(/\.zip$/i.test(f.name)){toast('Décompresse d’abord le .zip (double-clic), puis choisis le fichier .ics.',6000);return}
+ const r=new FileReader();
+ r.onload=()=>{icsEv=parseIcs(r.result);if(!icsEv.length){toast('Aucun événement exploitable dans ce fichier.',5000);return}icsEv.forEach(e=>e.pid=matchPatient(e));$('ics-past').checked=false;renderIcs();openM('m-ics')};
+ r.readAsText(f,'UTF-8');
+}
+function renderIcs(){
+ const past=$('ics-past').checked,t=today();
+ const known=new Set(allRdvs().map(x=>x.r.gid).filter(Boolean));
+ const slot=new Map(allRdvs().map(x=>[x.r.date+'_'+x.r.heure,x.p]));
+ const opts='<option value="">Ignorer</option>'+[...db.patients].sort((a,b)=>full(a).localeCompare(full(b),'fr')).map(p=>`<option value="${p.id}">${esc(full(p))} (#${esc(p.numDossier)})</option>`).join('');
+ let dup=0,rows='',n=0;
+ icsEv.forEach((e,i)=>{
+  if(!past&&e.date<t)return;
+  const taken=slot.get(e.date+'_'+e.heure);
+  if(known.has(e.uid)||(taken&&e.pid&&taken.id===e.pid)){dup++;return}
+  n++;
+  const ctl=taken?`<span class="neg" style="font-size:13px">Créneau pris (${esc(full(taken))})</span>`:`<select data-i="${i}" style="width:48%">${opts.replace(`value="${e.pid}"`,`value="${e.pid}" selected`)}</select>`;
+  rows+=`<div class="item"><div><span class="time">${e.heure}</span>${fr(e.date,{weekday:'short',day:'numeric',month:'short'})}<div class="mut">${esc(e.summary)}</div></div>${ctl}</div>`;
+ });
+ const sk=[icsSkip.rrule&&icsSkip.rrule+' récurrent(s)',icsSkip.allday&&icsSkip.allday+' sans heure',icsSkip.cancelled&&icsSkip.cancelled+' annulé(s)'].filter(Boolean).join(', ');
+ $('ics-info').textContent=n+' à importer · '+dup+' déjà présent(s)'+(sk?' · ignorés : '+sk:'');
+ $('ics-list').innerHTML=rows||'<p class="mut">Rien de nouveau à importer.</p>';
+}
+function applyIcs(){
+ let n=0,bad=0;const used=new Set(allRdvs().map(x=>x.r.date+'_'+x.r.heure));
+ document.querySelectorAll('#ics-list select[data-i]').forEach(sel=>{
+  if(!sel.value)return;
+  const e=icsEv[+sel.dataset.i],k=e.date+'_'+e.heure;
+  if(used.has(k)){bad++;return}
+  db.patients.find(p=>p.id===sel.value).rdvs.push({id:uid(),date:e.date,heure:e.heure,motif:'',prix:'',pay:'Espèces',gid:e.uid});
+  used.add(k);n++;
+ });
+ save();closeM('m-ics');toast(n+' rendez-vous importé(s)'+(bad?', '+bad+' ignoré(s) (créneau pris)':''),5000);
 }
 
 /* Démarrage */
