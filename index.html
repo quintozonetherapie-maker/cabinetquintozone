@@ -486,7 +486,7 @@ function applyIcs(){
 const idb=()=>new Promise((res,rej)=>{const r=indexedDB.open('cabinet_link',1);r.onupgradeneeded=()=>r.result.createObjectStore('h');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});
 const idbGet=async k=>{const d=await idb();return new Promise(res=>{const q=d.transaction('h').objectStore('h').get(k);q.onsuccess=()=>res(q.result);q.onerror=()=>res(null)})};
 const idbSet=async(k,v)=>{const d=await idb();return new Promise(res=>{const t=d.transaction('h','readwrite');t.objectStore('h').put(v,k);t.oncomplete=()=>res();t.onerror=()=>res()})};
-let linkH=null,linkState='none',linkRemote=null,linkWT=null;
+let linkH=null,linkState='none',linkRemote=null,linkWT=null,linkPending=false;
 const canLink=()=>typeof window.showSaveFilePicker==='function';
 async function readLinked(){return JSON.parse(await (await linkH.getFile()).text())}
 async function syncCheck(){
@@ -502,10 +502,12 @@ async function initLink(){
 }
 async function writeNow(){
  if(!linkH||linkState!=='ready')return;
+ linkPending=false;
  try{db.lastBackup=Date.now();const w=await linkH.createWritable();await w.write(JSON.stringify(db));await w.close();renderHome();renderLink()}
  catch(e){linkState='needs';renderLink()}
 }
-function queueLinked(){if(linkState!=='ready')return;clearTimeout(linkWT);linkWT=setTimeout(writeNow,1200)}
+function queueLinked(){if(linkState!=='ready')return;linkPending=true;clearTimeout(linkWT);linkWT=setTimeout(writeNow,1200)}
+function flushLinked(){if(linkPending){clearTimeout(linkWT);writeNow()}}
 function applyDb(s){
  db=Object.assign({patients:[],scmExpenses:[],bankStatements:[],lastBackup:null},s);
  db.patients.forEach(p=>{p.id=p.id||uid();p.prenom=p.prenom||p['prénom']||'';p.numDossier=String(p.numDossier||'');p.docs=p.docs||[];p.rdvs=(p.rdvs||[]).map(x=>({...x,id:x.id||uid(),heure:tnorm(x.heure),date:String(x.date||'').slice(0,10)}))});
@@ -543,6 +545,9 @@ function renderLink(){
 if(localStorage.getItem('cabinet_theme')==='dark'||(!localStorage.getItem('cabinet_theme')&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');$('themeBtn').textContent='☀️'}
 $('hdate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 $('sms-date').value=addDays(today(),1);$('ag-date').value=today();$('scm-month').value=today().slice(0,7);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushLinked()});
+addEventListener('pagehide',flushLinked);
+addEventListener('beforeunload',e=>{if(linkPending){flushLinked();e.preventDefault();e.returnValue=''}});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal.show').forEach(m=>m.classList.remove('show'))});
 renderAll();initLink();
 </script>
