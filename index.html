@@ -89,7 +89,7 @@ nav button.on{color:var(--pri)}
  <div id="slots"></div>
 </div>
 <div class="card"><h2>Google Agenda <label class="btn sm" style="margin:0;color:var(--ink)">Importer (.ics)<input type="file" accept=".ics,.zip" hidden onchange="readIcs(event)"></label></h2>
-<p class="mut" style="margin-top:0">Pour importer : sur calendar.google.com, Paramètres, « Importer et exporter », « Exporter ». Décompresse le .zip puis choisis le fichier .ics.</p><iframe src="https://calendar.google.com/calendar/embed?src=frederic.maucherat%40gmail.com&ctz=Europe%2FParis" style="border:0;width:100%;height:420px;border-radius:10px;background:#fff" loading="lazy"></iframe></div>
+<p class="mut" style="margin-top:0">Pour importer : sur calendar.google.com, Paramètres, « Importer et exporter », « Exporter ». Décompresse le .zip puis choisis le fichier .ics.</p><iframe src="https://calendar.google.com/calendar/embed?src=quintozonetherapie%40gmail.com&ctz=Europe%2FParis" style="border:0;width:100%;height:420px;border-radius:10px;background:#fff" loading="lazy"></iframe></div>
 </section>
 
 <section id="tab-scm" class="tab">
@@ -203,12 +203,13 @@ const allRdvs=()=>db.patients.flatMap(p=>p.rdvs.map(r=>({p,r})));
 const byTime=(a,b)=>(a.r.date+(a.r.heure||'')).localeCompare(b.r.date+(b.r.heure||''));
 
 function smsText(p,r){return `Bonjour ${p.prenom}, je vous rappelle notre rendez-vous du ${fr(r.date)} à ${r.heure||''}. À bientôt. Bonne journée. Frédéric M`}
+const GCAL='quintozonetherapie@gmail.com';
 function gcalUrl(p,r){
  const [y,m,d]=r.date.split('-').map(Number),[h,mi]=(r.heure||'09:00').split(':').map(Number);
  const f=t=>ymd(t).replace(/-/g,'')+'T'+String(t.getHours()).padStart(2,'0')+String(t.getMinutes()).padStart(2,'0')+'00';
- return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&dates='+f(new Date(y,m-1,d,h,mi))+'/'+f(new Date(y,m-1,d,h+1,mi))+'&ctz=Europe/Paris&details='+encodeURIComponent('Dossier #'+p.numDossier+(r.motif?' - '+r.motif:''));
+ return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&dates='+f(new Date(y,m-1,d,h,mi))+'/'+f(new Date(y,m-1,d,h+1,mi))+'&ctz=Europe/Paris&src='+encodeURIComponent(GCAL)+'&details='+encodeURIComponent('Dossier #'+p.numDossier+(r.motif?' - '+r.motif:''));
 }
-function addGcalNew(pid){const p=db.patients.find(x=>x.id===pid);if(p)window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&ctz=Europe/Paris&details='+encodeURIComponent('Dossier #'+p.numDossier),'_blank')}
+function addGcalNew(pid){const p=db.patients.find(x=>x.id===pid);if(p)window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('Soin - '+full(p))+'&ctz=Europe/Paris&src='+encodeURIComponent(GCAL)+'&details='+encodeURIComponent('Dossier #'+p.numDossier),'_blank')}
 function addGcal(rid){const x=allRdvs().find(x=>x.r.id===rid);if(x)window.open(gcalUrl(x.p,x.r),'_blank')}
 function sendSms(rid){
  const x=allRdvs().find(x=>x.r.id===rid);if(!x||!x.p.tel)return;
