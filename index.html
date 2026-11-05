@@ -99,6 +99,8 @@ nav button.on{color:var(--pri)}
  <div class="row sp"><h3 style="margin:10px 0">Factures</h3><button class="btn p sm" onclick="openExp()">+ Facture</button></div>
  <div id="exps"></div>
 </div>
+<div class="card"><h2>Soins du mois <button class="btn sm" onclick="exportBilan()">Export CSV</button></h2><div id="bilan-list"></div><p class="mut" id="bilan-pay" style="margin-bottom:0"></p></div>
+<div class="card"><h2>Bilan par mois</h2><div id="bilan-year"></div><p class="mut" style="margin-bottom:0">Touche un mois pour afficher le détail de ses soins.</p></div>
 <div class="card"><h2>Relevés bancaires <button class="btn g sm" onclick="openBank()">+ Relevé</button></h2><div id="banks"></div></div>
 <div class="card"><h2>Sauvegarde</h2><p class="mut" style="margin-top:0">Patients, rendez-vous, factures et relevés. Pensez à sauvegarder régulièrement : les données sont stockées uniquement sur cet appareil.</p>
 <div id="link-box" style="margin-bottom:12px"></div>
@@ -270,6 +272,7 @@ function shiftDay(n){$('ag-date').value=addDays($('ag-date').value||today(),n);r
 function goToday(){$('ag-date').value=today();renderAgenda()}
 function renderScm(){
  const m=$('scm-month').value||today().slice(0,7);
+ renderBilan(m);
  const l=(db.scmExpenses||[]).filter(e=>e.date.startsWith(m)).sort((a,b)=>b.date.localeCompare(a.date));
  $('scm-total').textContent=eur(l.reduce((s,e)=>s+(+e.montant||0),0));
  $('scm-ca').textContent=eur(allRdvs().filter(x=>x.r.date.startsWith(m)).reduce((s,x)=>s+(+x.r.prix||0),0));
@@ -540,6 +543,37 @@ function renderLink(){
  box.innerHTML=!canLink()?'<p class="mut">Sauvegarde automatique vers un fichier : disponible avec Chrome ou Edge.</p>'
   :linkState==='none'?'<button class="btn p" onclick="linkFile()">Lier un fichier de sauvegarde</button><p class="mut">Choisis ton dossier Google Drive : le fichier est réécrit après chaque modification.</p>'
   :`<p class="mut" style="margin-top:0">Fichier lié : <b>${nm}</b> — ${linkState==='ready'?'à jour'+(db.lastBackup?' ('+new Date(db.lastBackup).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')':''):linkState==='behind'?'plus récent que cet appareil':'autorisation requise'}</p><div class="row"><button class="btn sm" onclick="${linkState==='behind'?'loadRemote()':linkState==='needs'?'reconnect()':'writeNow()'}">${linkState==='behind'?'Charger':linkState==='needs'?'Reconnecter':'Sauvegarder maintenant'}</button><button class="btn sm" onclick="unlink()">Dissocier</button></div>`;
+}
+
+/* Bilan financier */
+function renderBilan(m){
+ const rows=allRdvs().filter(x=>x.r.date.startsWith(m)).sort(byTime),t=today();
+ let tot=0;const pay={};
+ $('bilan-list').innerHTML=rows.length?rows.map(x=>{
+  const v=+x.r.prix||0,md=x.r.pay||x.r.paiement||'Espèces',has=x.r.prix!==''&&x.r.prix!=null;
+  tot+=v;if(v)pay[md]=(pay[md]||0)+v;
+  return `<div class="item"><div><b>${esc(full(x.p))}</b><div class="mut">${fr(x.r.date,{weekday:'short',day:'numeric',month:'short'})} à ${esc(x.r.heure)}${x.r.motif?' · '+esc(x.r.motif):''}${x.r.date>t?' · <span class="chip">à venir</span>':''}</div></div><div style="text-align:right"><b>${has?eur(v):'—'}</b><div class="mut">${has?esc(md):'non renseigné'}</div></div></div>`}).join('')
+  +`<div class="item"><b>Total · ${rows.length} soin${rows.length>1?'s':''}</b><b>${eur(tot)}</b></div>`
+  :'<p class="mut">Aucun soin ce mois-ci.</p>';
+ $('bilan-pay').textContent=Object.keys(pay).length?'Dont : '+Object.entries(pay).map(([k,v])=>k+' '+eur(v)).join(' · '):'';
+ const y=m.slice(0,4);let T=[0,0,0],h='<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="text-align:right;color:var(--mut)"><th style="text-align:left;padding:4px 0">Mois</th><th>Soins</th><th>Honoraires</th><th>Charges</th><th>Résultat</th></tr>';
+ for(let i=1;i<=12;i++){
+  const k=y+'-'+String(i).padStart(2,'0'),r=allRdvs().filter(x=>x.r.date.startsWith(k));
+  const ca=r.reduce((s,x)=>s+(+x.r.prix||0),0),ch=(db.scmExpenses||[]).filter(e=>e.date.startsWith(k)).reduce((s,e)=>s+(+e.montant||0),0);
+  if(!r.length&&!ch)continue;
+  T[0]+=ca;T[1]+=ch;T[2]+=r.length;
+  h+=`<tr style="text-align:right;border-top:1px solid var(--line);cursor:pointer;${k===m?'font-weight:700;background:var(--soft)':''}" onclick="$('scm-month').value='${k}';renderScm()"><td style="text-align:left;padding:7px 0;text-transform:capitalize">${new Date(+y,i-1,1).toLocaleDateString('fr-FR',{month:'long'})}</td><td>${r.length}</td><td>${eur(ca)}</td><td>${eur(ch)}</td><td class="${ca-ch<0?'neg':'pos'}">${eur(ca-ch)}</td></tr>`;
+ }
+ h+=`<tr style="text-align:right;border-top:2px solid var(--line);font-weight:700"><td style="text-align:left;padding:7px 0">Total ${y}</td><td>${T[2]}</td><td>${eur(T[0])}</td><td>${eur(T[1])}</td><td class="${T[0]-T[1]<0?'neg':'pos'}">${eur(T[0]-T[1])}</td></tr></table>`;
+ $('bilan-year').innerHTML=h;
+}
+function exportBilan(){
+ const m=$('scm-month').value||today().slice(0,7);
+ const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ const lines=[['Date','Heure','Patient','N° dossier','Motif','Paiement','Montant (€)'].map(q).join(';')];
+ allRdvs().filter(x=>x.r.date.startsWith(m)).sort(byTime).forEach(x=>lines.push([x.r.date.split('-').reverse().join('/'),x.r.heure,full(x.p),x.p.numDossier,x.r.motif||'',x.r.pay||x.r.paiement||'',x.r.prix===''||x.r.prix==null?'':String(+x.r.prix).replace('.',',')].map(q).join(';')));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));
+ a.download='soins_'+m+'.csv';document.body.appendChild(a);a.click();a.remove();toast('Export CSV téléchargé');
 }
 
 /* Démarrage */
